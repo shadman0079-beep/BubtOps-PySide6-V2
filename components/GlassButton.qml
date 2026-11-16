@@ -1,4 +1,4 @@
-
+ 
 import QtQuick
 import QtQuick.Effects
 
@@ -9,6 +9,7 @@ Rectangle {
     property bool primary: false
     property bool hovered: false
     property bool pressed: false
+    property bool enabled: true
     property Item backdropSource: null
 
     signal clicked()
@@ -20,12 +21,15 @@ Rectangle {
     color: "transparent"
 
     border.width: 1
-
     border.color: button.primary
-                  ? "#55BDEAFF"
-                  : "#32FFFFFF"
+                  ? "#8ACFFFFF"
+                  : button.hovered
+                    ? "#78FFFFFF"
+                    : "#43FFFFFF"
 
     clip: true
+
+    opacity: button.enabled ? 1.0 : 0.48
 
     scale: button.pressed ? 0.985
          : button.hovered ? 1.012
@@ -38,8 +42,14 @@ Rectangle {
         }
     }
 
+    Behavior on border.color {
+        ColorAnimation {
+            duration: 160
+        }
+    }
+
     // =========================================
-    // BACKGROUND CAPTURE
+    // 01. BACKGROUND CAPTURE
     // =========================================
 
     ShaderEffectSource {
@@ -70,20 +80,22 @@ Rectangle {
     }
 
     // =========================================
-    // GLASS BLUR
+    // 02. GLASS BLUR
     // =========================================
 
     MultiEffect {
         anchors.fill: parent
         source: backdropTexture
 
+        visible: button.backdropSource !== null
+
         blurEnabled: true
-        blur: 0.65
-        blurMax: 28
+        blur: 0.68
+        blurMax: 30
     }
 
     // =========================================
-    // TRANSLUCENT GLASS BASE
+    // 03. TRANSLUCENT MATERIAL
     // =========================================
 
     Rectangle {
@@ -95,30 +107,30 @@ Rectangle {
                 position: 0.0
 
                 color: button.primary
-                       ? "#506D9DBD"
-                       : "#35C8E5F5"
+                       ? "#506F9DBE"
+                       : "#28D7EDFA"
             }
 
             GradientStop {
                 position: 0.48
 
                 color: button.primary
-                       ? "#3B547EAA"
-                       : "#22A9D9E9"
+                       ? "#3A577FA9"
+                       : "#19A9D9EA"
             }
 
             GradientStop {
                 position: 1.0
 
                 color: button.primary
-                       ? "#40516E99"
+                       ? "#40516F9A"
                        : "#187B9BBF"
             }
         }
 
-        opacity: button.pressed ? 0.95
-               : button.hovered ? 0.92
-               : 0.78
+        opacity: button.pressed ? 0.92
+               : button.hovered ? 0.88
+               : 0.72
 
         Behavior on opacity {
             NumberAnimation {
@@ -128,7 +140,7 @@ Rectangle {
     }
 
     // =========================================
-    // SOFT GLOSSY REFLECTION
+    // 04. GLASS BODY REFLECTION
     // =========================================
 
     Rectangle {
@@ -139,46 +151,51 @@ Rectangle {
             GradientStop {
                 position: 0.0
                 color: button.hovered
-                       ? "#30FFFFFF"
-                       : "#20FFFFFF"
+                       ? "#35FFFFFF"
+                       : "#25FFFFFF"
             }
 
             GradientStop {
                 position: 0.30
-                color: "#0BFFFFFF"
+                color: "#11FFFFFF"
             }
 
             GradientStop {
-                position: 0.70
-                color: "#02FFFFFF"
+                position: 0.68
+                color: "#03FFFFFF"
             }
 
             GradientStop {
                 position: 1.0
-                color: "#0A152C45"
+                color: "#14142643"
             }
         }
     }
 
     // =========================================
-    // SUBTLE TOP GLASS LIGHT
+    // 05. DIAGONAL LIGHT
     // =========================================
 
     Rectangle {
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: parent.top
+        width: parent.width * 1.3
+        height: parent.height * 0.45
 
-        height: parent.height * 0.32
+        x: -parent.width * 0.14
+        y: -parent.height * 0.13
 
-        radius: button.radius
+        rotation: -10
+
+        opacity: button.hovered ? 0.9 : 0.55
 
         gradient: Gradient {
             GradientStop {
                 position: 0.0
-                color: button.hovered
-                       ? "#20FFFFFF"
-                       : "#12FFFFFF"
+                color: "#00FFFFFF"
+            }
+
+            GradientStop {
+                position: 0.5
+                color: "#20FFFFFF"
             }
 
             GradientStop {
@@ -186,10 +203,48 @@ Rectangle {
                 color: "#00FFFFFF"
             }
         }
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 170
+            }
+        }
     }
 
     // =========================================
-    // BUTTON LABEL
+    // 06. TOP EDGE REFLECTION
+    // =========================================
+
+    Rectangle {
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+
+        anchors.leftMargin: 11
+        anchors.rightMargin: 11
+
+        height: 1
+        color: "#AFFFFFFF"
+        opacity: button.hovered ? 0.75 : 0.42
+    }
+
+    // =========================================
+    // 07. INNER OPTICAL EDGE
+    // =========================================
+
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: 1
+
+        radius: Math.max(0, button.radius - 1)
+
+        color: "transparent"
+        border.width: 1
+        border.color: "#22FFFFFF"
+    }
+
+    // =========================================
+    // 08. BUTTON LABEL
     // =========================================
 
     Text {
@@ -203,7 +258,7 @@ Rectangle {
         font.weight: Font.DemiBold
         font.letterSpacing: 0.25
 
-        opacity: button.pressed ? 0.85 : 1.0
+        opacity: button.pressed ? 0.84 : 1.0
 
         Behavior on opacity {
             NumberAnimation {
@@ -213,14 +268,18 @@ Rectangle {
     }
 
     // =========================================
-    // INTERACTION
+    // 09. INTERACTION
     // =========================================
 
     MouseArea {
         anchors.fill: parent
 
+        enabled: button.enabled
+
         hoverEnabled: true
-        cursorShape: Qt.PointingHandCursor
+        cursorShape: button.enabled
+                     ? Qt.PointingHandCursor
+                     : Qt.ArrowCursor
 
         onEntered: button.hovered = true
 

@@ -4,11 +4,11 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Effects
 
-
 Item {
     id: page
 
     property var backend: null
+    property Item backdropSource: null
 
     property var assets: []
     property var locations: []
@@ -37,10 +37,9 @@ Item {
         "Out of Service"
     ]
 
-
-    // =====================================================
-    // 01. DATA LOADING
-    // =====================================================
+    // =========================================
+    // 01. DATABASE FUNCTIONS
+    // =========================================
 
     function refreshData() {
         if (!backend)
@@ -80,12 +79,14 @@ Item {
 
     function openNewAsset() {
         editingAssetId = 0
+
         assetCodeField.text = ""
         assetNameField.text = ""
         categoryField.text = ""
         purchaseDateField.text = ""
         purchaseCostField.text = "0"
         repairCostField.text = "0"
+
         locationCombo.currentIndex = 0
         conditionCombo.currentIndex = 0
         statusCombo.currentIndex = 0
@@ -139,7 +140,8 @@ Item {
         if (!backend)
             return
 
-        let selectedLocation = locationCombo.currentIndex > 0
+        let selectedLocation =
+            locationCombo.currentIndex > 0
             ? locations[locationCombo.currentIndex - 1].location_id
             : null
 
@@ -180,10 +182,9 @@ Item {
         messageDialog.open()
     }
 
-
-    // =====================================================
+    // =========================================
     // 02. DATABASE SIGNAL CONNECTION
-    // =====================================================
+    // =========================================
 
     Connections {
         target: page.backend
@@ -195,41 +196,41 @@ Item {
 
     Component.onCompleted: refreshData()
 
-
-    // =====================================================
+    // =========================================
     // 03. MESSAGE DIALOG
-    // =====================================================
+    // =========================================
 
     Dialog {
         id: messageDialog
 
         anchors.centerIn: parent
-
         width: 350
-
         modal: true
 
         background: Rectangle {
-            radius: 16
-            color: "#18253B"
-            border.color: "#526D91"
+            radius: 17
+            color: "#E91B2941"
             border.width: 1
+            border.color: "#70FFFFFF"
         }
 
         contentItem: ColumnLayout {
-            spacing: 14
+            spacing: 15
 
             Text {
                 text: messageText.text
                 color: "#EAF2FF"
                 font.pixelSize: 12
                 wrapMode: Text.WordWrap
-
                 Layout.fillWidth: true
             }
 
-            Button {
-                text: "Continue"
+            GlassButton {
+                label: "Continue"
+                primary: true
+
+                Layout.preferredWidth: 110
+                Layout.preferredHeight: 36
                 Layout.alignment: Qt.AlignRight
 
                 onClicked: messageDialog.close()
@@ -242,19 +243,17 @@ Item {
         property string text: ""
     }
 
-
-    // =====================================================
-    // 04. MAIN PAGE LAYOUT
-    // =====================================================
+    // =========================================
+    // 04. MAIN PAGE
+    // =========================================
 
     ColumnLayout {
         anchors.fill: parent
         spacing: 15
 
-
-        // =================================================
+        // =====================================
         // A. PAGE HEADER
-        // =================================================
+        // =====================================
 
         RowLayout {
             Layout.fillWidth: true
@@ -281,34 +280,21 @@ Item {
                 Layout.fillWidth: true
             }
 
-            Button {
-                text: "+  Add New Asset"
+            GlassButton {
+                label: "+  Add New Asset"
+                primary: true
+                backdropSource: page.backdropSource
+
+                Layout.preferredWidth: 155
+                Layout.preferredHeight: 40
 
                 onClicked: page.openNewAsset()
-
-                contentItem: Text {
-                    text: parent.text
-                    color: "#071626"
-                    font.pixelSize: 11
-                    font.weight: Font.Bold
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-
-                background: Rectangle {
-                    radius: 10
-                    color: "#83CFFF"
-                }
-
-                Layout.preferredWidth: 145
-                Layout.preferredHeight: 39
             }
         }
 
-
-        // =================================================
+        // =====================================
         // B. STATISTICS
-        // =================================================
+        // =====================================
 
         RowLayout {
             Layout.fillWidth: true
@@ -340,7 +326,8 @@ Item {
                         label: "PURCHASE VALUE",
                         value: page.money(
                             page.assets.reduce(
-                                (sum, a) => sum + Number(a.purchase_cost || 0),
+                                (sum, a) =>
+                                    sum + Number(a.purchase_cost || 0),
                                 0
                             )
                         ),
@@ -348,39 +335,42 @@ Item {
                     }
                 ]
 
-                delegate: Rectangle {
+                delegate: GlassPanel {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 82
+                    Layout.preferredHeight: 88
 
-                    radius: 13
-                    color: "#18243A"
-                    border.width: 1
-                    border.color: "#35FFFFFF"
+                    backdropSource: page.backdropSource
+                    glassTint: 0.095
+                    radius: 15
+                    blurAmount: 0.62
 
                     Rectangle {
                         width: 3
-                        height: 38
+                        height: 40
                         radius: 2
                         color: modelData.accent
 
                         anchors.left: parent.left
-                        anchors.leftMargin: 12
+                        anchors.leftMargin: 13
                         anchors.verticalCenter: parent.verticalCenter
                     }
 
                     ColumnLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: 23
+
+                        anchors.leftMargin: 24
                         anchors.rightMargin: 10
                         anchors.topMargin: 12
                         anchors.bottomMargin: 10
+
                         spacing: 5
 
                         Text {
                             text: modelData.label
-                            color: "#91A5C5"
+                            color: "#A8BAD4"
                             font.pixelSize: 8
                             font.weight: Font.Bold
+                            font.letterSpacing: 0.7
                         }
 
                         Text {
@@ -394,40 +384,31 @@ Item {
             }
         }
 
-
-        // =================================================
+        // =====================================
         // C. SEARCH AND FILTER BAR
-        // =================================================
+        // =====================================
 
-        Rectangle {
+        GlassPanel {
             Layout.fillWidth: true
-            Layout.preferredHeight: 58
+            Layout.preferredHeight: 62
 
-            radius: 12
-            color: "#18243A"
-            border.color: "#32FFFFFF"
-            border.width: 1
+            backdropSource: page.backdropSource
+            glassTint: 0.085
+            radius: 14
+            blurAmount: 0.62
 
             RowLayout {
                 anchors.fill: parent
-                anchors.margins: 9
+                anchors.margins: 10
                 spacing: 9
 
-                TextField {
+                GlassField {
                     Layout.fillWidth: true
 
-                    placeholderText: "Search code, asset, category or building..."
+                    placeholderText:
+                        "Search code, asset, category or building..."
+
                     text: page.searchText
-
-                    color: "#EDF4FF"
-                    placeholderTextColor: "#7186A6"
-
-                    background: Rectangle {
-                        radius: 8
-                        color: "#172A43"
-                        border.color: "#304B6C"
-                        border.width: 1
-                    }
 
                     onTextChanged: {
                         page.searchText = text
@@ -435,10 +416,10 @@ Item {
                     }
                 }
 
-                ComboBox {
+                GlassCombo {
                     id: filterCondition
 
-                    Layout.preferredWidth: 120
+                    Layout.preferredWidth: 125
 
                     model: ["All Conditions"].concat(
                         page.conditionOptions
@@ -452,7 +433,7 @@ Item {
                     }
                 }
 
-                ComboBox {
+                GlassCombo {
                     id: filterStatus
 
                     Layout.preferredWidth: 145
@@ -469,8 +450,29 @@ Item {
                     }
                 }
 
-                Button {
-                    text: "Reset"
+                GlassCombo {
+                    id: filterCategory
+
+                    Layout.preferredWidth: 135
+
+                    model: ["All Categories"].concat(
+                        page.categories
+                    )
+
+                    onActivated: {
+                        page.selectedCategory =
+                            currentIndex === 0 ? "" : currentText
+
+                        page.refreshData()
+                    }
+                }
+
+                GlassButton {
+                    label: "Reset"
+                    backdropSource: page.backdropSource
+
+                    Layout.preferredWidth: 68
+                    Layout.preferredHeight: 38
 
                     onClicked: {
                         page.searchText = ""
@@ -480,6 +482,7 @@ Item {
 
                         filterCondition.currentIndex = 0
                         filterStatus.currentIndex = 0
+                        filterCategory.currentIndex = 0
 
                         page.refreshData()
                     }
@@ -487,24 +490,25 @@ Item {
             }
         }
 
-
-        // =================================================
+        // =====================================
         // D. ASSET INVENTORY
-        // =================================================
+        // =====================================
 
-        Rectangle {
+        GlassPanel {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            radius: 15
-            color: "#162238"
-            border.color: "#38FFFFFF"
-            border.width: 1
+            backdropSource: page.backdropSource
+            glassTint: 0.105
+            radius: 17
+            blurAmount: 0.66
 
             ColumnLayout {
                 anchors.fill: parent
                 anchors.margins: 15
                 spacing: 12
+
+                // INVENTORY HEADER
 
                 RowLayout {
                     Layout.fillWidth: true
@@ -522,12 +526,12 @@ Item {
 
                     Text {
                         text: page.assets.length + " ASSETS"
-                        color: "#91A5C5"
+                        color: "#A4B8D5"
                         font.pixelSize: 9
                         font.weight: Font.Bold
+                        font.letterSpacing: 0.7
                     }
                 }
-
 
                 // TABLE HEADER
 
@@ -535,18 +539,33 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 38
 
-                    radius: 7
-                    color: "#263953"
+                    radius: 9
+                    color: "#263D5A"
+                    border.width: 1
+                    border.color: "#40FFFFFF"
+
+                    gradient: Gradient {
+                        GradientStop {
+                            position: 0.0
+                            color: "#3BFFFFFF"
+                        }
+
+                        GradientStop {
+                            position: 1.0
+                            color: "#172C4960"
+                        }
+                    }
 
                     RowLayout {
                         anchors.fill: parent
                         anchors.leftMargin: 10
                         anchors.rightMargin: 10
+                        spacing: 3
 
                         Text {
                             Layout.preferredWidth: 75
                             text: "CODE"
-                            color: "#9FB3D0"
+                            color: "#B5C8E2"
                             font.pixelSize: 9
                             font.bold: true
                         }
@@ -554,7 +573,7 @@ Item {
                         Text {
                             Layout.fillWidth: true
                             text: "ASSET"
-                            color: "#9FB3D0"
+                            color: "#B5C8E2"
                             font.pixelSize: 9
                             font.bold: true
                         }
@@ -562,7 +581,7 @@ Item {
                         Text {
                             Layout.preferredWidth: 90
                             text: "CATEGORY"
-                            color: "#9FB3D0"
+                            color: "#B5C8E2"
                             font.pixelSize: 9
                             font.bold: true
                         }
@@ -570,7 +589,7 @@ Item {
                         Text {
                             Layout.preferredWidth: 115
                             text: "LOCATION"
-                            color: "#9FB3D0"
+                            color: "#B5C8E2"
                             font.pixelSize: 9
                             font.bold: true
                         }
@@ -578,7 +597,7 @@ Item {
                         Text {
                             Layout.preferredWidth: 82
                             text: "CONDITION"
-                            color: "#9FB3D0"
+                            color: "#B5C8E2"
                             font.pixelSize: 9
                             font.bold: true
                         }
@@ -586,7 +605,7 @@ Item {
                         Text {
                             Layout.preferredWidth: 95
                             text: "STATUS"
-                            color: "#9FB3D0"
+                            color: "#B5C8E2"
                             font.pixelSize: 9
                             font.bold: true
                         }
@@ -594,7 +613,7 @@ Item {
                         Text {
                             Layout.preferredWidth: 75
                             text: "VALUE"
-                            color: "#9FB3D0"
+                            color: "#B5C8E2"
                             font.pixelSize: 9
                             font.bold: true
                         }
@@ -602,13 +621,12 @@ Item {
                         Text {
                             Layout.preferredWidth: 95
                             text: "ACTIONS"
-                            color: "#9FB3D0"
+                            color: "#B5C8E2"
                             font.pixelSize: 9
                             font.bold: true
                         }
                     }
                 }
-
 
                 // TABLE CONTENT
 
@@ -631,14 +649,26 @@ Item {
                         width: assetList.width
                         height: 51
 
-                        radius: 8
+                        radius: 9
 
                         color: index % 2 === 0
-                               ? "#172A42"
-                               : "#1C304A"
+                               ? "#1CFFFFFF"
+                               : "#0DFFFFFF"
 
-                        border.color: "#18FFFFFF"
+                        border.color: "#28FFFFFF"
                         border.width: 1
+
+                        Rectangle {
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+
+                            anchors.leftMargin: 10
+                            anchors.rightMargin: 10
+
+                            height: 1
+                            color: "#35FFFFFF"
+                        }
 
                         RowLayout {
                             anchors.fill: parent
@@ -666,7 +696,7 @@ Item {
                             Text {
                                 Layout.preferredWidth: 90
                                 text: modelData.category
-                                color: "#AABBD4"
+                                color: "#B9C9DF"
                                 font.pixelSize: 9
                                 elide: Text.ElideRight
                             }
@@ -674,7 +704,7 @@ Item {
                             Text {
                                 Layout.preferredWidth: 115
                                 text: page.locationName(modelData)
-                                color: "#AABBD4"
+                                color: "#B9C9DF"
                                 font.pixelSize: 9
                                 elide: Text.ElideRight
                             }
@@ -711,19 +741,24 @@ Item {
                                 Layout.preferredWidth: 95
                                 spacing: 4
 
-                                Button {
-                                    text: "Edit"
+                                GlassButton {
+                                    label: "Edit"
+                                    backdropSource: page.backdropSource
+
+                                    Layout.preferredWidth: 43
+                                    Layout.preferredHeight: 29
 
                                     onClicked: {
                                         page.openEditAsset(modelData)
                                     }
-
-                                    Layout.preferredWidth: 43
-                                    Layout.preferredHeight: 27
                                 }
 
-                                Button {
-                                    text: "Del"
+                                GlassButton {
+                                    label: "Del"
+                                    backdropSource: page.backdropSource
+
+                                    Layout.preferredWidth: 42
+                                    Layout.preferredHeight: 29
 
                                     onClicked: {
                                         deleteDialog.assetId =
@@ -731,9 +766,6 @@ Item {
 
                                         deleteDialog.open()
                                     }
-
-                                    Layout.preferredWidth: 40
-                                    Layout.preferredHeight: 27
                                 }
                             }
                         }
@@ -745,7 +777,7 @@ Item {
                         visible: page.assets.length === 0
 
                         text: "No assets found"
-                        color: "#91A5C5"
+                        color: "#A7B9D4"
                         font.pixelSize: 13
                     }
                 }
@@ -753,11 +785,9 @@ Item {
         }
     }
 
-
-    
-    // =====================================================
+    // =========================================
     // 05. DELETE CONFIRMATION
-    // =====================================================
+    // =========================================
 
     Dialog {
         id: deleteDialog
@@ -773,37 +803,64 @@ Item {
 
         title: "Delete asset?"
 
-        standardButtons: Dialog.Yes | Dialog.No
-
         background: Rectangle {
-            color: "#1A2940"
-            radius: 13
-            border.color: "#58708E"
+            color: "#E91B2941"
+            radius: 16
+            border.color: "#70FFFFFF"
             border.width: 1
         }
 
-        contentItem: Text {
-            width: 340
+        contentItem: ColumnLayout {
+            spacing: 15
 
-            text: "Are you sure you want to delete this asset? This action cannot be undone."
+            Text {
+                Layout.fillWidth: true
 
-            color: "#EAF0FC"
+                text: "Are you sure you want to delete this asset? This action cannot be undone."
 
-            wrapMode: Text.WordWrap
+                color: "#EAF0FC"
+                wrapMode: Text.WordWrap
+                font.pixelSize: 12
+            }
 
-            font.pixelSize: 12
-        }
+            RowLayout {
+                Layout.fillWidth: true
 
-        onAccepted: {
-            page.deleteCurrentAsset(assetId)
+                Item {
+                    Layout.fillWidth: true
+                }
+
+                GlassButton {
+                    label: "Cancel"
+                    backdropSource: page.backdropSource
+
+                    Layout.preferredWidth: 85
+                    Layout.preferredHeight: 36
+
+                    onClicked: deleteDialog.close()
+                }
+
+                GlassButton {
+                    label: "Delete"
+                    primary: true
+                    backdropSource: page.backdropSource
+
+                    Layout.preferredWidth: 85
+                    Layout.preferredHeight: 36
+
+                    onClicked: {
+                        const id = deleteDialog.assetId
+                        deleteDialog.close()
+                        page.deleteCurrentAsset(id)
+                    }
+                }
+            }
         }
     }
 
-
-
-    // =====================================================
+    // =========================================
     // 06. ADD / EDIT ASSET FORM
-    // =====================================================
+    // =========================================
 
     Rectangle {
         id: formOverlay
@@ -811,7 +868,6 @@ Item {
         anchors.fill: parent
 
         visible: page.formVisible
-
         color: "#B80A1020"
 
         z: 10
@@ -821,8 +877,7 @@ Item {
             onClicked: {}
         }
 
-
-        Rectangle {
+        GlassPanel {
             id: formPanel
 
             width: Math.min(480, parent.width - 30)
@@ -830,18 +885,16 @@ Item {
 
             anchors.centerIn: parent
 
-            radius: 18
-
-            color: "#192A43"
-            border.width: 1
-            border.color: "#75BDEB"
+            radius: 20
+            glassTint: 0.22
+            blurAmount: 0.82
+            backdropSource: page.backdropSource
 
             ColumnLayout {
                 anchors.fill: parent
                 anchors.margins: 22
 
-                spacing: 12
-
+                spacing: 10
 
                 // FORM HEADER
 
@@ -863,7 +916,7 @@ Item {
 
                         Text {
                             text: "Enter the asset information below."
-                            color: "#91A5C5"
+                            color: "#A4B8D5"
                             font.pixelSize: 10
                         }
                     }
@@ -872,70 +925,70 @@ Item {
                         Layout.fillWidth: true
                     }
 
-                    Button {
-                        text: "✕"
+                    GlassButton {
+                        label: "✕"
+                        backdropSource: page.backdropSource
+
+                        Layout.preferredWidth: 36
+                        Layout.preferredHeight: 34
+
                         onClicked: page.formVisible = false
                     }
                 }
 
-
                 Rectangle {
                     Layout.fillWidth: true
                     height: 1
-                    color: "#35FFFFFF"
+                    color: "#38FFFFFF"
                 }
-
 
                 // ASSET CODE
 
                 Label {
                     text: "Asset code *"
-                    color: "#B9C9DF"
+                    color: "#C1D0E5"
                 }
 
-                TextField {
+                GlassField {
                     id: assetCodeField
                     Layout.fillWidth: true
                     placeholderText: "Example: AST-0100"
                 }
 
-
                 // ASSET NAME
 
                 Label {
                     text: "Asset name *"
-                    color: "#B9C9DF"
+                    color: "#C1D0E5"
                 }
 
-                TextField {
+                GlassField {
                     id: assetNameField
                     Layout.fillWidth: true
                     placeholderText: "Example: Desktop Computer"
                 }
 
-
                 // CATEGORY
 
                 Label {
                     text: "Category *"
-                    color: "#B9C9DF"
+                    color: "#C1D0E5"
                 }
 
-                TextField {
+                GlassField {
                     id: categoryField
                     Layout.fillWidth: true
                     placeholderText: "Example: Electronics"
                 }
 
-
                 // LOCATION
 
                 Label {
                     text: "Location"
-                    color: "#B9C9DF"
+                    color: "#C1D0E5"
                 }
 
-                ComboBox {
+                GlassCombo {
                     id: locationCombo
 
                     Layout.fillWidth: true
@@ -957,7 +1010,6 @@ Item {
                     )
                 }
 
-
                 // CONDITION AND STATUS
 
                 RowLayout {
@@ -969,11 +1021,12 @@ Item {
 
                         Label {
                             text: "Condition"
-                            color: "#B9C9DF"
+                            color: "#C1D0E5"
                         }
 
-                        ComboBox {
+                        GlassCombo {
                             id: conditionCombo
+
                             Layout.fillWidth: true
                             model: page.conditionOptions
                         }
@@ -984,31 +1037,31 @@ Item {
 
                         Label {
                             text: "Status"
-                            color: "#B9C9DF"
+                            color: "#C1D0E5"
                         }
 
-                        ComboBox {
+                        GlassCombo {
                             id: statusCombo
+
                             Layout.fillWidth: true
                             model: page.statusOptions
                         }
                     }
                 }
 
-
                 // PURCHASE DATE
 
                 Label {
                     text: "Purchase date (YYYY-MM-DD)"
-                    color: "#B9C9DF"
+                    color: "#C1D0E5"
                 }
 
-                TextField {
+                GlassField {
                     id: purchaseDateField
+
                     Layout.fillWidth: true
                     placeholderText: "2026-10-10"
                 }
-
 
                 // COSTS
 
@@ -1021,11 +1074,12 @@ Item {
 
                         Label {
                             text: "Purchase cost"
-                            color: "#B9C9DF"
+                            color: "#C1D0E5"
                         }
 
-                        TextField {
+                        GlassField {
                             id: purchaseCostField
+
                             Layout.fillWidth: true
                             text: "0"
                             inputMethodHints: Qt.ImhFormattedNumbersOnly
@@ -1037,11 +1091,12 @@ Item {
 
                         Label {
                             text: "Estimated repair cost"
-                            color: "#B9C9DF"
+                            color: "#C1D0E5"
                         }
 
-                        TextField {
+                        GlassField {
                             id: repairCostField
+
                             Layout.fillWidth: true
                             text: "0"
                             inputMethodHints: Qt.ImhFormattedNumbersOnly
@@ -1049,11 +1104,9 @@ Item {
                     }
                 }
 
-
                 Item {
                     Layout.fillHeight: true
                 }
-
 
                 // FORM ACTIONS
 
@@ -1064,16 +1117,26 @@ Item {
                         Layout.fillWidth: true
                     }
 
-                    Button {
-                        text: "Cancel"
+                    GlassButton {
+                        label: "Cancel"
+                        backdropSource: page.backdropSource
+
+                        Layout.preferredWidth: 85
+                        Layout.preferredHeight: 38
 
                         onClicked: page.formVisible = false
                     }
 
-                    Button {
-                        text: page.editingAssetId > 0
-                              ? "Save Changes"
-                              : "Register Asset"
+                    GlassButton {
+                        label: page.editingAssetId > 0
+                               ? "Save Changes"
+                               : "Register Asset"
+
+                        primary: true
+                        backdropSource: page.backdropSource
+
+                        Layout.preferredWidth: 135
+                        Layout.preferredHeight: 38
 
                         onClicked: page.saveCurrentAsset()
                     }
