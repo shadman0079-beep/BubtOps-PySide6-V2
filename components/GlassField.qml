@@ -5,41 +5,74 @@ TextField {
     id: control
 
     color: "#EDF4FF"
-    placeholderTextColor: "#7186A6"
+    placeholderTextColor: "#8295B2"
+
     selectionColor: "#6683CFFF"
     selectedTextColor: "#FFFFFF"
+
     font.pixelSize: 12
 
     leftPadding: 12
     rightPadding: 12
-    implicitHeight: 38
+
+    implicitHeight: 39
 
     background: Rectangle {
         radius: 10
-        color: control.activeFocus ? "#24FFFFFF" : "#14FFFFFF"
+
+        color: control.activeFocus
+               ? "#27FFFFFF"
+               : "#14FFFFFF"
+
         border.width: 1
-        border.color: control.activeFocus ? "#99BDEBFF" : "#30FFFFFF"
+
+        border.color: control.activeFocus
+                      ? "#9ACFFFFF"
+                      : "#38FFFFFF"
 
         Behavior on color {
-            ColorAnimation { duration: 140 }
+            ColorAnimation { duration: 150 }
         }
 
         Behavior on border.color {
-            ColorAnimation { duration: 140 }
+            ColorAnimation { duration: 150 }
         }
 
-        // top inner light
+        // Top inner reflection
         Rectangle {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
+
             anchors.margins: 1
-            height: parent.height * 0.45
+
+            height: parent.height * 0.42
             radius: 9
+
             gradient: Gradient {
-                GradientStop { position: 0.0; color: "#12FFFFFF" }
-                GradientStop { position: 1.0; color: "#00FFFFFF" }
+                GradientStop {
+                    position: 0.0
+                    color: "#17FFFFFF"
+                }
+
+                GradientStop {
+                    position: 1.0
+                    color: "#00FFFFFF"
+                }
             }
+        }
+
+        // Focus highlight
+        Rectangle {
+            anchors.fill: parent
+
+            radius: 10
+            color: "transparent"
+
+            border.width: 1
+            border.color: control.activeFocus
+                          ? "#35BDEBFF"
+                          : "transparent"
         }
     }
 }

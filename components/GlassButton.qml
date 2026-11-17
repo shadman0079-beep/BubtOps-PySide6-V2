@@ -1,4 +1,3 @@
- 
 import QtQuick
 import QtQuick.Effects
 
@@ -9,7 +8,6 @@ Rectangle {
     property bool primary: false
     property bool hovered: false
     property bool pressed: false
-    property bool enabled: true
     property Item backdropSource: null
 
     signal clicked()
@@ -17,23 +15,22 @@ Rectangle {
     implicitWidth: 150
     implicitHeight: 43
 
-    radius: 14
+    radius: 13
     color: "transparent"
-
-    border.width: 1
-    border.color: button.primary
-                  ? "#8ACFFFFF"
-                  : button.hovered
-                    ? "#78FFFFFF"
-                    : "#43FFFFFF"
-
     clip: true
 
-    opacity: button.enabled ? 1.0 : 0.48
+    opacity: enabled ? 1.0 : 0.48
 
-    scale: button.pressed ? 0.985
-         : button.hovered ? 1.012
+    scale: pressed ? 0.985
+         : hovered ? 1.012
          : 1.0
+
+    border.width: 1
+    border.color: primary
+                  ? "#8ACFFFFF"
+                  : hovered
+                    ? "#78FFFFFF"
+                    : "#43FFFFFF"
 
     Behavior on scale {
         NumberAnimation {
@@ -48,10 +45,7 @@ Rectangle {
         }
     }
 
-    // =========================================
-    // 01. BACKGROUND CAPTURE
-    // =========================================
-
+    // Background capture
     ShaderEffectSource {
         id: backdropTexture
 
@@ -66,27 +60,21 @@ Rectangle {
             if (!button.backdropSource)
                 return Qt.rect(0, 0, 0, 0)
 
-            const position = button.mapToItem(
+            const p = button.mapToItem(
                 button.backdropSource, 0, 0
             )
 
             return Qt.rect(
-                position.x,
-                position.y,
-                button.width,
-                button.height
+                p.x, p.y,
+                button.width, button.height
             )
         }
     }
 
-    // =========================================
-    // 02. GLASS BLUR
-    // =========================================
-
+    // Glass blur
     MultiEffect {
         anchors.fill: parent
         source: backdropTexture
-
         visible: button.backdropSource !== null
 
         blurEnabled: true
@@ -94,10 +82,7 @@ Rectangle {
         blurMax: 30
     }
 
-    // =========================================
-    // 03. TRANSLUCENT MATERIAL
-    // =========================================
-
+    // Translucent button material
     Rectangle {
         anchors.fill: parent
         radius: button.radius
@@ -105,23 +90,18 @@ Rectangle {
         gradient: Gradient {
             GradientStop {
                 position: 0.0
-
                 color: button.primary
                        ? "#506F9DBE"
                        : "#28D7EDFA"
             }
-
             GradientStop {
                 position: 0.48
-
                 color: button.primary
                        ? "#3A577FA9"
                        : "#19A9D9EA"
             }
-
             GradientStop {
                 position: 1.0
-
                 color: button.primary
                        ? "#40516F9A"
                        : "#187B9BBF"
@@ -133,16 +113,11 @@ Rectangle {
                : 0.72
 
         Behavior on opacity {
-            NumberAnimation {
-                duration: 160
-            }
+            NumberAnimation { duration: 160 }
         }
     }
 
-    // =========================================
-    // 04. GLASS BODY REFLECTION
-    // =========================================
-
+    // Body reflection
     Rectangle {
         anchors.fill: parent
         radius: button.radius
@@ -154,17 +129,14 @@ Rectangle {
                        ? "#35FFFFFF"
                        : "#25FFFFFF"
             }
-
             GradientStop {
                 position: 0.30
                 color: "#11FFFFFF"
             }
-
             GradientStop {
                 position: 0.68
                 color: "#03FFFFFF"
             }
-
             GradientStop {
                 position: 1.0
                 color: "#14142643"
@@ -172,10 +144,7 @@ Rectangle {
         }
     }
 
-    // =========================================
-    // 05. DIAGONAL LIGHT
-    // =========================================
-
+    // Diagonal optical highlight
     Rectangle {
         width: parent.width * 1.3
         height: parent.height * 0.45
@@ -184,20 +153,17 @@ Rectangle {
         y: -parent.height * 0.13
 
         rotation: -10
-
-        opacity: button.hovered ? 0.9 : 0.55
+        opacity: button.hovered ? 0.85 : 0.48
 
         gradient: Gradient {
             GradientStop {
                 position: 0.0
                 color: "#00FFFFFF"
             }
-
             GradientStop {
                 position: 0.5
                 color: "#20FFFFFF"
             }
-
             GradientStop {
                 position: 1.0
                 color: "#00FFFFFF"
@@ -205,16 +171,11 @@ Rectangle {
         }
 
         Behavior on opacity {
-            NumberAnimation {
-                duration: 170
-            }
+            NumberAnimation { duration: 170 }
         }
     }
 
-    // =========================================
-    // 06. TOP EDGE REFLECTION
-    // =========================================
-
+    // Top edge reflection
     Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
@@ -228,10 +189,7 @@ Rectangle {
         opacity: button.hovered ? 0.75 : 0.42
     }
 
-    // =========================================
-    // 07. INNER OPTICAL EDGE
-    // =========================================
-
+    // Inner optical edge
     Rectangle {
         anchors.fill: parent
         anchors.margins: 1
@@ -243,15 +201,11 @@ Rectangle {
         border.color: "#22FFFFFF"
     }
 
-    // =========================================
-    // 08. BUTTON LABEL
-    // =========================================
-
+    // Label
     Text {
         anchors.centerIn: parent
 
         text: button.label
-
         color: "#F5F8FF"
 
         font.pixelSize: 12
@@ -261,19 +215,13 @@ Rectangle {
         opacity: button.pressed ? 0.84 : 1.0
 
         Behavior on opacity {
-            NumberAnimation {
-                duration: 120
-            }
+            NumberAnimation { duration: 120 }
         }
     }
 
-    // =========================================
-    // 09. INTERACTION
-    // =========================================
-
+    // Interaction
     MouseArea {
         anchors.fill: parent
-
         enabled: button.enabled
 
         hoverEnabled: true
@@ -288,9 +236,7 @@ Rectangle {
             button.pressed = false
         }
 
-        onPressed: {
-            button.pressed = true
-        }
+        onPressed: button.pressed = true
 
         onReleased: {
             button.pressed = false
@@ -299,8 +245,6 @@ Rectangle {
                 button.clicked()
         }
 
-        onCanceled: {
-            button.pressed = false
-        }
+        onCanceled: button.pressed = false
     }
 }

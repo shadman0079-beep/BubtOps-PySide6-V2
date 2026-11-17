@@ -63,7 +63,7 @@ Rectangle {
                             }
                             GradientStop {
                                 position: 1.0
-                                color: "#6254B9"
+                                color: "#5a4ea3"
                             }
                         }
 
@@ -190,9 +190,9 @@ Rectangle {
                                     GradientStop {
                                         position: 0.0
                                         color: navItem.selected
-                                               ? "#354E7190"
+                                               ? "#60357190"
                                                : navItem.hovered
-                                                 ? "#1BFFFFFF"
+                                                 ? "rgb(27, 133, 255)"
                                                  : "#0CFFFFFF"
                                     }
 
@@ -1048,7 +1048,7 @@ Rectangle {
             // PAGE 2 — ASSET REGISTRY
             // =================================================
 
-           AssetRegistry {
+  AssetRegistry {
     id: assetRegistryPage
 
     Layout.fillWidth: true
@@ -1057,7 +1057,6 @@ Rectangle {
     backend: assetBackend
     backdropSource: backgroundScene
 }
-
             // =================================================
             // PAGE 3 — GLASS COMPONENT PREVIEW
             // =================================================

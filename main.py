@@ -5,8 +5,6 @@ from pathlib import Path
 from datetime import datetime
 
 from PySide6.QtQuickControls2 import QQuickStyle
-from PySide6.QtQuickControls2 import QQuickStyle
-QQuickStyle.setStyle("Basic")
 
 from PySide6.QtCore import (
     QObject,
@@ -25,12 +23,15 @@ from PySide6.QtQuick import QQuickView
 # 01. DATABASE CONFIGURATION
 # ============================================================
 
-# Existing database location.
-# We are NOT creating a new database.
+# Main project directory.
+PROJECT_DIR = Path(__file__).resolve().parent
+
+# Database stored inside the project.
+# This makes BubtOps portable across computers.
 
 DATABASE_PATH = (
-    Path(__file__).resolve().parent.parent
-    / "BubtOps"
+    PROJECT_DIR
+    / "data"
     / "bubtops.db"
 )
 
@@ -53,17 +54,27 @@ class AssetBackend(QObject):
 
         self._database_error = ""
 
+        print(f"Using SQLite database: {DATABASE_PATH}")
+
         if not DATABASE_PATH.exists():
             self._database_error = (
                 f"Database not found:\n{DATABASE_PATH}"
             )
+            print(self._database_error)
             return
 
         try:
             self.ensure_cost_columns()
 
+            print("Database initialized successfully.")
+
         except Exception as error:
             self._database_error = str(error)
+
+            print(
+                "Database initialization error:",
+                self._database_error
+            )
 
     # --------------------------------------------------------
     # DATABASE STATUS
@@ -524,7 +535,7 @@ class AssetBackend(QObject):
                 "message": message
             }
 
-        except sqlite3.IntegrityError as error:
+        except sqlite3.IntegrityError:
 
             return {
                 "success": False,
@@ -601,6 +612,7 @@ class AssetBackend(QObject):
 # ============================================================
 
 def main():
+
     QQuickStyle.setStyle("Basic")
 
     app = QGuiApplication(sys.argv)
@@ -630,7 +642,7 @@ def main():
     )
 
     # Load main QML file
-    qml_file = Path(__file__).with_name("main.qml")
+    qml_file = PROJECT_DIR / "main.qml"
 
     view.setSource(
         QUrl.fromLocalFile(str(qml_file))
