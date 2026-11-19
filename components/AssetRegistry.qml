@@ -1,3 +1,4 @@
+
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -21,8 +22,8 @@ Item {
     property bool formVisible: false
     property int editingAssetId: 0
 
-    property color textPrimary: "#F2F6FF"
-    property color textSecondary: "#91A5C0"
+    property color textPrimary: "#FFFFFF"
+    property color textSecondary: "#E0E8F5"
     property color accent: "#83CFFF"
 
     property var conditionOptions: [
@@ -188,7 +189,7 @@ Item {
         case "Poor": return "#F2B76F"
         case "Damaged": return "#E58B9A"
         case "Critical": return "#FF718A"
-        default: return "#A9BBD5"
+        default: return "#FFFFFF"
         }
     }
 
@@ -198,7 +199,7 @@ Item {
         case "Needs Maintenance": return "#F2B76F"
         case "Under Maintenance": return "#83CFFF"
         case "Out of Service": return "#E58B9A"
-        default: return "#A9BBD5"
+        default: return "#FFFFFF"
         }
     }
 
@@ -224,7 +225,7 @@ Item {
         id: messageDialog
 
         anchors.centerIn: parent
-        width: 350
+        width: 390
         modal: true
 
         background: Rectangle {
@@ -235,12 +236,12 @@ Item {
         }
 
         contentItem: ColumnLayout {
-            spacing: 15
+            spacing: 18
 
             Text {
                 text: messageText.text
-                color: "#EAF2FF"
-                font.pixelSize: 12
+                color: "#FFFFFF"
+                font.pixelSize: 15
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
             }
@@ -250,8 +251,8 @@ Item {
                 primary: true
                 backdropSource: page.backdropSource
 
-                Layout.preferredWidth: 110
-                Layout.preferredHeight: 36
+                Layout.preferredWidth: 120
+                Layout.preferredHeight: 42
                 Layout.alignment: Qt.AlignRight
 
                 onClicked: messageDialog.close()
@@ -270,27 +271,28 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        spacing: 14
+        spacing: 16
 
         // HEADER
+
         RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 62
+            Layout.preferredHeight: 72
 
             ColumnLayout {
-                spacing: 4
+                spacing: 5
 
                 Text {
                     text: "Asset Registry"
-                    color: page.textPrimary
-                    font.pixelSize: 25
+                    color: "#FFFFFF"
+                    font.pixelSize: 29
                     font.weight: Font.Bold
                 }
 
                 Text {
                     text: "Manage, monitor and organize campus assets."
-                    color: page.textSecondary
-                    font.pixelSize: 11
+                    color: "#E0E8F5"
+                    font.pixelSize: 14
                 }
             }
 
@@ -303,17 +305,18 @@ Item {
                 primary: true
                 backdropSource: page.backdropSource
 
-                Layout.preferredWidth: 155
-                Layout.preferredHeight: 40
+                Layout.preferredWidth: 175
+                Layout.preferredHeight: 44
 
                 onClicked: page.openNewAsset()
             }
         }
 
         // STATISTICS
+
         RowLayout {
             Layout.fillWidth: true
-            spacing: 10
+            spacing: 12
 
             Repeater {
                 model: [
@@ -356,7 +359,7 @@ Item {
 
                 delegate: GlassPanel {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 88
+                    Layout.preferredHeight: 108
 
                     backdropSource: page.backdropSource
                     glassTint: 0.085
@@ -365,38 +368,35 @@ Item {
 
                     Rectangle {
                         width: 3
-                        height: 40
+                        height: 48
                         radius: 2
-
                         color: modelData.accent
 
                         anchors.left: parent.left
-                        anchors.leftMargin: 13
+                        anchors.leftMargin: 14
                         anchors.verticalCenter: parent.verticalCenter
                     }
 
                     ColumnLayout {
                         anchors.fill: parent
-
-                        anchors.leftMargin: 24
+                        anchors.leftMargin: 26
                         anchors.rightMargin: 10
-                        anchors.topMargin: 12
-                        anchors.bottomMargin: 10
-
-                        spacing: 5
+                        anchors.topMargin: 14
+                        anchors.bottomMargin: 12
+                        spacing: 7
 
                         Text {
                             text: modelData.label
-                            color: "#A8BAD4"
-                            font.pixelSize: 8
+                            color: "#FFFFFF"
+                            font.pixelSize: 11
                             font.weight: Font.Bold
-                            font.letterSpacing: 0.7
+                            font.letterSpacing: 0.6
                         }
 
                         Text {
                             text: String(modelData.value)
-                            color: "#F4F7FF"
-                            font.pixelSize: 20
+                            color: "#FFFFFF"
+                            font.pixelSize: 25
                             font.weight: Font.Bold
                             elide: Text.ElideRight
                         }
@@ -406,9 +406,10 @@ Item {
         }
 
         // SEARCH AND FILTERS
+
         GlassPanel {
             Layout.fillWidth: true
-            Layout.preferredHeight: 62
+            Layout.preferredHeight: 70
 
             backdropSource: page.backdropSource
             glassTint: 0.075
@@ -417,12 +418,11 @@ Item {
 
             RowLayout {
                 anchors.fill: parent
-                anchors.margins: 10
-                spacing: 9
+                anchors.margins: 11
+                spacing: 10
 
                 GlassField {
                     Layout.fillWidth: true
-
                     placeholderText:
                         "Search code, asset, category or building..."
 
@@ -436,8 +436,7 @@ Item {
 
                 GlassCombo {
                     id: filterCondition
-
-                    Layout.preferredWidth: 125
+                    Layout.preferredWidth: 135
 
                     model: ["All Conditions"].concat(
                         page.conditionOptions
@@ -453,8 +452,7 @@ Item {
 
                 GlassCombo {
                     id: filterStatus
-
-                    Layout.preferredWidth: 145
+                    Layout.preferredWidth: 155
 
                     model: ["All Statuses"].concat(
                         page.statusOptions
@@ -470,8 +468,7 @@ Item {
 
                 GlassCombo {
                     id: filterCategory
-
-                    Layout.preferredWidth: 135
+                    Layout.preferredWidth: 145
 
                     model: ["All Categories"].concat(
                         page.categories
@@ -489,8 +486,8 @@ Item {
                     label: "Reset"
                     backdropSource: page.backdropSource
 
-                    Layout.preferredWidth: 68
-                    Layout.preferredHeight: 38
+                    Layout.preferredWidth: 78
+                    Layout.preferredHeight: 42
 
                     onClicked: {
                         page.searchText = ""
@@ -509,6 +506,7 @@ Item {
         }
 
         // INVENTORY PANEL
+
         GlassPanel {
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -520,27 +518,26 @@ Item {
 
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: 15
-                spacing: 11
+                anchors.margins: 16
+                spacing: 13
 
-                // Inventory heading
                 RowLayout {
                     Layout.fillWidth: true
 
                     ColumnLayout {
-                        spacing: 3
+                        spacing: 4
 
                         Text {
                             text: "Asset inventory"
-                            color: "#F1F5FF"
-                            font.pixelSize: 14
+                            color: "#FFFFFF"
+                            font.pixelSize: 19
                             font.weight: Font.DemiBold
                         }
 
                         Text {
                             text: "Registered campus equipment and resources"
-                            color: "#8FA4C2"
-                            font.pixelSize: 9
+                            color: "#E0E8F5"
+                            font.pixelSize: 13
                         }
                     }
 
@@ -549,28 +546,29 @@ Item {
                     }
 
                     Rectangle {
-                        radius: 10
+                        radius: 11
                         color: "#1CFFFFFF"
                         border.width: 1
-                        border.color: "#30FFFFFF"
+                        border.color: "#40FFFFFF"
 
-                        Layout.preferredWidth: 85
-                        Layout.preferredHeight: 27
+                        Layout.preferredWidth: 105
+                        Layout.preferredHeight: 32
 
                         Text {
                             anchors.centerIn: parent
                             text: page.assets.length + " ASSETS"
-                            color: "#B9CBE4"
-                            font.pixelSize: 9
+                            color: "#FFFFFF"
+                            font.pixelSize: 12
                             font.weight: Font.Bold
                         }
                     }
                 }
 
-                // Table header
+                // TABLE HEADER
+
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 37
+                    Layout.preferredHeight: 43
 
                     radius: 9
                     color: "#263D5A"
@@ -597,70 +595,71 @@ Item {
                         Text {
                             Layout.preferredWidth: 76
                             text: "CODE"
-                            color: "#B5C8E2"
-                            font.pixelSize: 8
+                            color: "#FFFFFF"
+                            font.pixelSize: 11
                             font.bold: true
                         }
 
                         Text {
                             Layout.fillWidth: true
                             text: "ASSET"
-                            color: "#B5C8E2"
-                            font.pixelSize: 8
+                            color: "#FFFFFF"
+                            font.pixelSize: 11
                             font.bold: true
                         }
 
                         Text {
                             Layout.preferredWidth: 85
                             text: "CATEGORY"
-                            color: "#B5C8E2"
-                            font.pixelSize: 8
+                            color: "#FFFFFF"
+                            font.pixelSize: 11
                             font.bold: true
                         }
 
                         Text {
                             Layout.preferredWidth: 105
                             text: "LOCATION"
-                            color: "#B5C8E2"
-                            font.pixelSize: 8
+                            color: "#FFFFFF"
+                            font.pixelSize: 11
                             font.bold: true
                         }
 
                         Text {
                             Layout.preferredWidth: 75
                             text: "CONDITION"
-                            color: "#B5C8E2"
-                            font.pixelSize: 8
+                            color: "#FFFFFF"
+                            font.pixelSize: 11
                             font.bold: true
                         }
 
                         Text {
                             Layout.preferredWidth: 92
                             text: "STATUS"
-                            color: "#B5C8E2"
-                            font.pixelSize: 8
+                            color: "#FFFFFF"
+                            font.pixelSize: 11
                             font.bold: true
                         }
 
                         Text {
                             Layout.preferredWidth: 74
                             text: "VALUE"
-                            color: "#B5C8E2"
-                            font.pixelSize: 8
+                            color: "#FFFFFF"
+                            font.pixelSize: 11
                             font.bold: true
                         }
 
                         Text {
                             Layout.preferredWidth: 92
                             text: "ACTIONS"
-                            color: "#B5C8E2"
-                            font.pixelSize: 8
+                            color: "#FFFFFF"
+                            font.pixelSize: 11
                             font.bold: true
                         }
                     }
                 }
 
-                // Scrollable inventory
+                // SCROLLABLE INVENTORY
+
                 ListView {
                     id: assetList
 
@@ -668,8 +667,7 @@ Item {
                     Layout.fillHeight: true
 
                     clip: true
-                    spacing: 5
-
+                    spacing: 6
                     model: page.assets
 
                     boundsBehavior: Flickable.StopAtBounds
@@ -680,8 +678,7 @@ Item {
 
                     delegate: Rectangle {
                         width: assetList.width
-                        height: 49
-
+                        height: 57
                         radius: 9
 
                         color: index % 2 === 0
@@ -689,7 +686,7 @@ Item {
                                : "#0CFFFFFF"
 
                         border.width: 1
-                        border.color: "#28FFFFFF"
+                        border.color: "#35FFFFFF"
 
                         Behavior on color {
                             ColorAnimation { duration: 120 }
@@ -704,8 +701,8 @@ Item {
                             Text {
                                 Layout.preferredWidth: 76
                                 text: modelData.asset_code || ""
-                                color: "#83CFFF"
-                                font.pixelSize: 9
+                                color: "#FFFFFF"
+                                font.pixelSize: 12
                                 font.bold: true
                                 elide: Text.ElideRight
                             }
@@ -713,24 +710,25 @@ Item {
                             Text {
                                 Layout.fillWidth: true
                                 text: modelData.asset_name || ""
-                                color: "#EAF0FC"
-                                font.pixelSize: 10
+                                color: "#FFFFFF"
+                                font.pixelSize: 13
+                                font.weight: Font.Medium
                                 elide: Text.ElideRight
                             }
 
                             Text {
                                 Layout.preferredWidth: 85
                                 text: modelData.category || ""
-                                color: "#B9C9DF"
-                                font.pixelSize: 9
+                                color: "#FFFFFF"
+                                font.pixelSize: 12
                                 elide: Text.ElideRight
                             }
 
                             Text {
                                 Layout.preferredWidth: 105
                                 text: page.locationName(modelData)
-                                color: "#B9C9DF"
-                                font.pixelSize: 9
+                                color: "#FFFFFF"
+                                font.pixelSize: 12
                                 elide: Text.ElideRight
                             }
 
@@ -740,7 +738,8 @@ Item {
                                 color: page.conditionColor(
                                     modelData.asset_condition
                                 )
-                                font.pixelSize: 9
+                                font.pixelSize: 12
+                                font.weight: Font.DemiBold
                                 elide: Text.ElideRight
                             }
 
@@ -748,15 +747,16 @@ Item {
                                 Layout.preferredWidth: 92
                                 text: modelData.status || ""
                                 color: page.statusColor(modelData.status)
-                                font.pixelSize: 9
+                                font.pixelSize: 12
+                                font.weight: Font.DemiBold
                                 elide: Text.ElideRight
                             }
 
                             Text {
                                 Layout.preferredWidth: 74
                                 text: page.money(modelData.purchase_cost)
-                                color: "#D7E2F3"
-                                font.pixelSize: 9
+                                color: "#FFFFFF"
+                                font.pixelSize: 12
                                 elide: Text.ElideRight
                             }
 
@@ -769,11 +769,9 @@ Item {
                                     backdropSource: page.backdropSource
 
                                     Layout.preferredWidth: 43
-                                    Layout.preferredHeight: 29
+                                    Layout.preferredHeight: 33
 
-                                    onClicked: {
-                                        page.openEditAsset(modelData)
-                                    }
+                                    onClicked: page.openEditAsset(modelData)
                                 }
 
                                 GlassButton {
@@ -781,7 +779,7 @@ Item {
                                     backdropSource: page.backdropSource
 
                                     Layout.preferredWidth: 42
-                                    Layout.preferredHeight: 29
+                                    Layout.preferredHeight: 33
 
                                     onClicked: {
                                         deleteDialog.assetId =
@@ -794,39 +792,36 @@ Item {
                         }
                     }
 
-                    // Empty state
                     Item {
                         anchors.centerIn: parent
-
-                        width: 260
-                        height: 90
-
+                        width: 280
+                        height: 100
                         visible: page.assets.length === 0
 
                         Column {
                             anchors.centerIn: parent
-                            spacing: 7
+                            spacing: 9
 
                             Text {
                                 anchors.horizontalCenter: parent.horizontalCenter
                                 text: "◇"
                                 color: "#83CFFF"
-                                font.pixelSize: 27
+                                font.pixelSize: 30
                             }
 
                             Text {
                                 anchors.horizontalCenter: parent.horizontalCenter
                                 text: "No assets found"
-                                color: "#DCE8F8"
-                                font.pixelSize: 13
+                                color: "#FFFFFF"
+                                font.pixelSize: 17
                                 font.weight: Font.DemiBold
                             }
 
                             Text {
                                 anchors.horizontalCenter: parent.horizontalCenter
                                 text: "Try changing your search or filters."
-                                color: "#8FA4C2"
-                                font.pixelSize: 10
+                                color: "#E0E8F5"
+                                font.pixelSize: 13
                             }
                         }
                     }
@@ -844,13 +839,12 @@ Item {
 
         property int assetId: 0
 
-        width: 390
+        width: 410
 
         x: (page.width - width) / 2
         y: (page.height - height) / 2
 
         modal: true
-
         title: "Delete asset?"
 
         background: Rectangle {
@@ -861,31 +855,29 @@ Item {
         }
 
         contentItem: ColumnLayout {
-            spacing: 15
+            spacing: 18
 
             Text {
                 Layout.fillWidth: true
 
                 text: "Are you sure you want to delete this asset? This action cannot be undone."
 
-                color: "#EAF0FC"
+                color: "#FFFFFF"
                 wrapMode: Text.WordWrap
-                font.pixelSize: 12
+                font.pixelSize: 15
             }
 
             RowLayout {
                 Layout.fillWidth: true
 
-                Item {
-                    Layout.fillWidth: true
-                }
+                Item { Layout.fillWidth: true }
 
                 GlassButton {
                     label: "Cancel"
                     backdropSource: page.backdropSource
 
-                    Layout.preferredWidth: 85
-                    Layout.preferredHeight: 36
+                    Layout.preferredWidth: 95
+                    Layout.preferredHeight: 42
 
                     onClicked: deleteDialog.close()
                 }
@@ -895,8 +887,8 @@ Item {
                     primary: true
                     backdropSource: page.backdropSource
 
-                    Layout.preferredWidth: 85
-                    Layout.preferredHeight: 36
+                    Layout.preferredWidth: 95
+                    Layout.preferredHeight: 42
 
                     onClicked: {
                         const id = deleteDialog.assetId
@@ -916,10 +908,8 @@ Item {
         id: formOverlay
 
         anchors.fill: parent
-
         visible: page.formVisible
         color: "#B80A1020"
-
         z: 10
 
         MouseArea {
@@ -930,8 +920,8 @@ Item {
         GlassPanel {
             id: formPanel
 
-            width: Math.min(490, parent.width - 30)
-            height: Math.min(660, parent.height - 30)
+            width: Math.min(510, parent.width - 30)
+            height: Math.min(690, parent.height - 30)
 
             anchors.centerIn: parent
 
@@ -942,43 +932,40 @@ Item {
 
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: 21
-                spacing: 10
+                anchors.margins: 22
+                spacing: 12
 
-                // Form heading
                 RowLayout {
                     Layout.fillWidth: true
 
                     ColumnLayout {
-                        spacing: 4
+                        spacing: 5
 
                         Text {
                             text: page.editingAssetId > 0
                                   ? "Edit asset"
                                   : "Register new asset"
 
-                            color: "#F2F6FF"
-                            font.pixelSize: 20
+                            color: "#FFFFFF"
+                            font.pixelSize: 24
                             font.bold: true
                         }
 
                         Text {
                             text: "Enter the asset information below."
-                            color: "#A4B8D5"
-                            font.pixelSize: 10
+                            color: "#E0E8F5"
+                            font.pixelSize: 13
                         }
                     }
 
-                    Item {
-                        Layout.fillWidth: true
-                    }
+                    Item { Layout.fillWidth: true }
 
                     GlassButton {
                         label: "✕"
                         backdropSource: page.backdropSource
 
-                        Layout.preferredWidth: 36
-                        Layout.preferredHeight: 34
+                        Layout.preferredWidth: 40
+                        Layout.preferredHeight: 40
 
                         onClicked: page.formVisible = false
                     }
@@ -987,72 +974,70 @@ Item {
                 Rectangle {
                     Layout.fillWidth: true
                     height: 1
-                    color: "#38FFFFFF"
+                    color: "#45FFFFFF"
                 }
 
-                // Scrollable form content
                 ScrollView {
                     id: formScroll
 
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-
                     clip: true
 
                     ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
                     ColumnLayout {
                         width: formScroll.availableWidth
-                        spacing: 9
+                        spacing: 11
 
                         Label {
                             text: "Asset code *"
-                            color: "#C1D0E5"
-                            font.pixelSize: 10
+                            color: "#FFFFFF"
+                            font.pixelSize: 14
+                            font.weight: Font.DemiBold
                         }
 
                         GlassField {
                             id: assetCodeField
-
                             Layout.fillWidth: true
                             placeholderText: "Example: AST-0100"
                         }
 
                         Label {
                             text: "Asset name *"
-                            color: "#C1D0E5"
-                            font.pixelSize: 10
+                            color: "#FFFFFF"
+                            font.pixelSize: 14
+                            font.weight: Font.DemiBold
                         }
 
                         GlassField {
                             id: assetNameField
-
                             Layout.fillWidth: true
                             placeholderText: "Example: Desktop Computer"
                         }
 
                         Label {
                             text: "Category *"
-                            color: "#C1D0E5"
-                            font.pixelSize: 10
+                            color: "#FFFFFF"
+                            font.pixelSize: 14
+                            font.weight: Font.DemiBold
                         }
 
                         GlassField {
                             id: categoryField
-
                             Layout.fillWidth: true
                             placeholderText: "Example: Electronics"
                         }
 
                         Label {
                             text: "Location"
-                            color: "#C1D0E5"
-                            font.pixelSize: 10
+                            color: "#FFFFFF"
+                            font.pixelSize: 14
+                            font.weight: Font.DemiBold
                         }
 
                         GlassCombo {
                             id: locationCombo
-
                             Layout.fillWidth: true
 
                             model: ["Unassigned"].concat(
@@ -1074,21 +1059,21 @@ Item {
 
                         RowLayout {
                             Layout.fillWidth: true
-                            spacing: 10
+                            spacing: 12
 
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                spacing: 7
+                                spacing: 8
 
                                 Label {
                                     text: "Condition"
-                                    color: "#C1D0E5"
-                                    font.pixelSize: 10
+                                    color: "#FFFFFF"
+                                    font.pixelSize: 14
+                                    font.weight: Font.DemiBold
                                 }
 
                                 GlassCombo {
                                     id: conditionCombo
-
                                     Layout.fillWidth: true
                                     model: page.conditionOptions
                                 }
@@ -1096,17 +1081,17 @@ Item {
 
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                spacing: 7
+                                spacing: 8
 
                                 Label {
                                     text: "Status"
-                                    color: "#C1D0E5"
-                                    font.pixelSize: 10
+                                    color: "#FFFFFF"
+                                    font.pixelSize: 14
+                                    font.weight: Font.DemiBold
                                 }
 
                                 GlassCombo {
                                     id: statusCombo
-
                                     Layout.fillWidth: true
                                     model: page.statusOptions
                                 }
@@ -1115,37 +1100,36 @@ Item {
 
                         Label {
                             text: "Purchase date (YYYY-MM-DD)"
-                            color: "#C1D0E5"
-                            font.pixelSize: 10
+                            color: "#FFFFFF"
+                            font.pixelSize: 14
+                            font.weight: Font.DemiBold
                         }
 
                         GlassField {
                             id: purchaseDateField
-
                             Layout.fillWidth: true
                             placeholderText: "2026-10-10"
                         }
 
                         RowLayout {
                             Layout.fillWidth: true
-                            spacing: 10
+                            spacing: 12
 
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                spacing: 7
+                                spacing: 8
 
                                 Label {
                                     text: "Purchase cost"
-                                    color: "#C1D0E5"
-                                    font.pixelSize: 10
+                                    color: "#FFFFFF"
+                                    font.pixelSize: 14
+                                    font.weight: Font.DemiBold
                                 }
 
                                 GlassField {
                                     id: purchaseCostField
-
                                     Layout.fillWidth: true
                                     text: "0"
-
                                     inputMethodHints:
                                         Qt.ImhFormattedNumbersOnly
                                 }
@@ -1153,20 +1137,19 @@ Item {
 
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                spacing: 7
+                                spacing: 8
 
                                 Label {
                                     text: "Estimated repair cost"
-                                    color: "#C1D0E5"
-                                    font.pixelSize: 10
+                                    color: "#FFFFFF"
+                                    font.pixelSize: 14
+                                    font.weight: Font.DemiBold
                                 }
 
                                 GlassField {
                                     id: repairCostField
-
                                     Layout.fillWidth: true
                                     text: "0"
-
                                     inputMethodHints:
                                         Qt.ImhFormattedNumbersOnly
                                 }
@@ -1174,7 +1157,7 @@ Item {
                         }
 
                         Item {
-                            Layout.preferredHeight: 8
+                            Layout.preferredHeight: 10
                         }
                     }
                 }
@@ -1182,23 +1165,20 @@ Item {
                 Rectangle {
                     Layout.fillWidth: true
                     height: 1
-                    color: "#30FFFFFF"
+                    color: "#45FFFFFF"
                 }
 
-                // Form actions
                 RowLayout {
                     Layout.fillWidth: true
 
-                    Item {
-                        Layout.fillWidth: true
-                    }
+                    Item { Layout.fillWidth: true }
 
                     GlassButton {
                         label: "Cancel"
                         backdropSource: page.backdropSource
 
-                        Layout.preferredWidth: 85
-                        Layout.preferredHeight: 38
+                        Layout.preferredWidth: 95
+                        Layout.preferredHeight: 42
 
                         onClicked: page.formVisible = false
                     }
@@ -1211,8 +1191,8 @@ Item {
                         primary: true
                         backdropSource: page.backdropSource
 
-                        Layout.preferredWidth: 135
-                        Layout.preferredHeight: 38
+                        Layout.preferredWidth: 150
+                        Layout.preferredHeight: 42
 
                         onClicked: page.saveCurrentAsset()
                     }

@@ -1,3 +1,4 @@
+
 import QtQuick
 import QtQuick.Window
 import QtQuick.Effects
@@ -6,11 +7,15 @@ Item {
     id: surface
 
     property Item backdropSource: null
+
     property real radius: 22
     property color tintColor: Qt.rgba(0.28, 0.39, 0.62, 0.12)
+
     property bool elevated: true
     property bool showEdge: true
+
     property real sheen: 1.0
+    property real blurAmount: 0.58
 
     function updateSlice() {
         if (!backdropSource || width <= 0 || height <= 0)
@@ -19,7 +24,10 @@ Item {
         const p = surface.mapToItem(backdropSource, 0, 0)
 
         slice.sourceRect = Qt.rect(
-            p.x, p.y, width, height
+            p.x,
+            p.y,
+            width,
+            height
         )
     }
 
@@ -34,7 +42,9 @@ Item {
 
     Timer {
         id: settle
+
         interval: 60
+
         onTriggered: surface.updateSlice()
     }
 
@@ -51,7 +61,10 @@ Item {
         }
     }
 
-    // Shadow
+    // =====================================
+    // SOFT ELEVATION
+    // =====================================
+
     Rectangle {
         id: shadowCaster
 
@@ -60,145 +73,141 @@ Item {
 
         radius: surface.radius
         color: "black"
-        visible: false
 
-        layer.enabled: surface.elevated
+        visible: false
+        layer.enabled: true
     }
 
     MultiEffect {
         anchors.fill: parent
+
         source: shadowCaster
         visible: surface.elevated
 
         shadowEnabled: true
         shadowColor: "#000000"
-        shadowOpacity: 0.34
-        shadowBlur: 1.0
-        shadowVerticalOffset: 9
+        shadowOpacity: 0.28
+        shadowBlur: 0.90
+
+        shadowVerticalOffset: 8
         shadowHorizontalOffset: 0
         shadowScale: 0.97
     }
 
-    // Background capture
-    ShaderEffectSource {
-        id: slice
+    // =====================================
+    // GLASS MATERIAL
+    // =====================================
+
+    Item {
+        id: material
 
         anchors.fill: parent
-        sourceItem: surface.backdropSource
-
-        live: true
-        hideSource: false
-        smooth: true
         visible: false
+
+        ShaderEffectSource {
+            id: slice
+
+            anchors.fill: parent
+
+            sourceItem: surface.backdropSource
+
+            live: true
+            hideSource: false
+            smooth: true
+        }
+
+        MultiEffect {
+            anchors.fill: parent
+
+            source: slice
+            visible: surface.backdropSource !== null
+
+            blurEnabled: true
+            blur: surface.blurAmount
+            blurMax: 40
+        }
+
+        Rectangle {
+            anchors.fill: parent
+
+            radius: surface.radius
+            color: surface.tintColor
+        }
+
+        Rectangle {
+            anchors.fill: parent
+
+            radius: surface.radius
+            opacity: surface.sheen
+
+            gradient: Gradient {
+                GradientStop {
+                    position: 0.0
+                    color: "#28FFFFFF"
+                }
+
+                GradientStop {
+                    position: 0.26
+                    color: "#14FFFFFF"
+                }
+
+                GradientStop {
+                    position: 0.60
+                    color: "#06FFFFFF"
+                }
+
+                GradientStop {
+                    position: 1.0
+                    color: "#18101B35"
+                }
+            }
+        }
     }
 
-    // Rounded mask
+    // =====================================
+    // ROUNDED MATERIAL MASK
+    // =====================================
+
     Item {
         id: roundMask
 
         anchors.fill: parent
+
         visible: false
         layer.enabled: true
 
         Rectangle {
             anchors.fill: parent
+
             radius: surface.radius
-            color: "black"
+            color: "white"
         }
     }
 
-    // Rounded backdrop
     MultiEffect {
-       anchors.fill: parent
-    source: slice
+        anchors.fill: parent
 
-    visible: surface.backdropSource !== null
+        source: material
 
-    maskEnabled: true
-    maskSource: roundMask
-    maskThresholdMin: 0.5
-    maskSpreadAtMin: 1.0
+        maskEnabled: true
+        maskSource: roundMask
+
+        maskThresholdMin: 0.5
+        maskSpreadAtMin: 1.0
     }
 
-    // Glass tint
+    // =====================================
+    // SINGLE OPTICAL EDGE
+    // =====================================
+
     Rectangle {
         anchors.fill: parent
+
         radius: surface.radius
-        color: surface.tintColor
-    }
 
-    // Body sheen
-    Rectangle {
-        anchors.fill: parent
-        radius: surface.radius
-        opacity: surface.sheen
+        color: "transparent"
 
-        gradient: Gradient {
-            GradientStop { position: 0.00; color: "#22FFFFFF" }
-            GradientStop { position: 0.25; color: "#0DFFFFFF" }
-            GradientStop { position: 0.60; color: "#04FFFFFF" }
-            GradientStop { position: 1.00; color: "#18101B33" }
-        }
-    }
-
-    // Upper reflection
-    Rectangle {
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: parent.top
-
-        height: parent.height * 0.30
-        radius: surface.radius
-        opacity: surface.sheen
-
-        gradient: Gradient {
-            GradientStop { position: 0.0; color: "#16FFFFFF" }
-            GradientStop { position: 1.0; color: "#00FFFFFF" }
-        }
-    }
-
-    // Diagonal reflection
-    Rectangle {
-        width: parent.width * 1.2
-        height: parent.height * 0.28
-
-        x: -parent.width * 0.08
-        y: -parent.height * 0.06
-
-        rotation: -8
-        opacity: surface.sheen * 0.45
-
-        gradient: Gradient {
-            GradientStop { position: 0.0; color: "#00FFFFFF" }
-            GradientStop { position: 0.48; color: "#12FFFFFF" }
-            GradientStop { position: 0.58; color: "#08FFFFFF" }
-            GradientStop { position: 1.0; color: "#00FFFFFF" }
-        }
-    }
-
-    // Optical edge
-    Item {
-        anchors.fill: parent
-        visible: surface.showEdge
-
-        Rectangle {
-            anchors.fill: parent
-            radius: surface.radius
-
-            color: "transparent"
-            border.width: 1
-            border.color: "#58FFFFFF"
-        }
-
-        Rectangle {
-            anchors.fill: parent
-            anchors.margins: 1
-
-            radius: Math.max(0, surface.radius - 1)
-
-            color: "transparent"
-            border.width: 1
-            border.color: "#20FFFFFF"
-        }
+        border.width: surface.showEdge ? 1 : 0
+        border.color: "#65FFFFFF"
     }
 }

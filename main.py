@@ -15,19 +15,20 @@ from PySide6.QtCore import (
     QSize
 )
 
-from PySide6.QtGui import QGuiApplication
+from PySide6.QtGui import (
+    QGuiApplication,
+    QFont,
+    QFontDatabase
+)
+
 from PySide6.QtQuick import QQuickView
 
 
 # ============================================================
-# 01. DATABASE CONFIGURATION
+# 01. PROJECT CONFIGURATION
 # ============================================================
 
-# Main project directory.
 PROJECT_DIR = Path(__file__).resolve().parent
-
-# Database stored inside the project.
-# This makes BubtOps portable across computers.
 
 DATABASE_PATH = (
     PROJECT_DIR
@@ -35,15 +36,77 @@ DATABASE_PATH = (
     / "bubtops.db"
 )
 
+FONT_DIRECTORY = PROJECT_DIR / "fonts"
+
 
 # ============================================================
-# 02. ASSET DATABASE BACKEND
+# 02. APPLICATION FONT
+# ============================================================
+
+def load_application_font(app):
+
+    font_candidates = [
+        FONT_DIRECTORY / "InterVariable.ttf",
+        FONT_DIRECTORY / "Inter-Regular.ttf",
+        FONT_DIRECTORY / "Inter.ttf"
+    ]
+
+    for font_path in font_candidates:
+
+        if not font_path.exists():
+            continue
+
+        font_id = QFontDatabase.addApplicationFont(
+            str(font_path)
+        )
+
+        if font_id == -1:
+            print("Could not load font:", font_path)
+            continue
+
+        families = QFontDatabase.applicationFontFamilies(
+            font_id
+        )
+
+        if not families:
+            continue
+
+        font_family = families[0]
+
+        application_font = QFont(font_family)
+        application_font.setPointSizeF(10.5)
+        application_font.setStyleHint(
+            QFont.StyleHint.SansSerif
+        )
+
+        app.setFont(application_font)
+
+        print("Application font loaded:", font_family)
+
+        return font_family
+
+    # Fallback if Inter is unavailable.
+    fallback_font = QFont("Segoe UI")
+    fallback_font.setPointSizeF(10.5)
+    fallback_font.setStyleHint(
+        QFont.StyleHint.SansSerif
+    )
+
+    app.setFont(fallback_font)
+
+    print("Inter not found. Using system fallback font.")
+
+    return fallback_font.family()
+
+
+# ============================================================
+# 03. ASSET DATABASE BACKEND
 # ============================================================
 
 class AssetBackend(QObject):
 
-    # Notifies QML when asset data changes.
     assetsChanged = Signal()
+    maintenanceChanged = Signal()
 
     # --------------------------------------------------------
     # INITIALIZATION
@@ -57,18 +120,22 @@ class AssetBackend(QObject):
         print(f"Using SQLite database: {DATABASE_PATH}")
 
         if not DATABASE_PATH.exists():
+
             self._database_error = (
                 f"Database not found:\n{DATABASE_PATH}"
             )
+
             print(self._database_error)
             return
 
         try:
+
             self.ensure_cost_columns()
 
             print("Database initialized successfully.")
 
         except Exception as error:
+
             self._database_error = str(error)
 
             print(
@@ -82,6 +149,7 @@ class AssetBackend(QObject):
 
     @Property(bool, constant=True)
     def databaseReady(self):
+
         return (
             DATABASE_PATH.exists()
             and not self._database_error
@@ -98,6 +166,7 @@ class AssetBackend(QObject):
     def connect_database(self):
 
         if not DATABASE_PATH.exists():
+
             raise FileNotFoundError(
                 f"Database not found: {DATABASE_PATH}"
             )
@@ -128,6 +197,7 @@ class AssetBackend(QObject):
             ).fetchall()
 
             if not columns:
+
                 raise RuntimeError(
                     "The assets table was not found."
                 )
@@ -154,7 +224,7 @@ class AssetBackend(QObject):
                 """)
 
     # --------------------------------------------------------
-    # 03. GET ASSETS
+    # 04. GET ASSETS
     # --------------------------------------------------------
 
     @Slot(
@@ -200,7 +270,6 @@ class AssetBackend(QObject):
 
             parameters = []
 
-            # Search filter
             if search_text.strip():
 
                 query += """
@@ -223,7 +292,6 @@ class AssetBackend(QObject):
                     search_value
                 ])
 
-            # Condition filter
             if condition:
 
                 query += """
@@ -232,7 +300,6 @@ class AssetBackend(QObject):
 
                 parameters.append(condition)
 
-            # Status filter
             if status:
 
                 query += """
@@ -241,7 +308,6 @@ class AssetBackend(QObject):
 
                 parameters.append(status)
 
-            # Category filter
             if category:
 
                 query += """
@@ -273,7 +339,7 @@ class AssetBackend(QObject):
             return []
 
     # --------------------------------------------------------
-    # 04. GET LOCATIONS
+    # 05. GET LOCATIONS
     # --------------------------------------------------------
 
     @Slot(result="QVariantList")
@@ -307,7 +373,7 @@ class AssetBackend(QObject):
             return []
 
     # --------------------------------------------------------
-    # 05. GET CATEGORIES
+    # 06. GET CATEGORIES
     # --------------------------------------------------------
 
     @Slot(result="QVariantList")
@@ -337,7 +403,819 @@ class AssetBackend(QObject):
             return []
 
     # --------------------------------------------------------
-    # 06. SAVE / UPDATE ASSET
+    # 07. GET LIVE DASHBOARD DATA
+    # --------------------------------------------------------
+
+    @Slot(result="QVariantMap")
+    def getDashboardData(self):
+        """Return live dashboard totals, condition counts and queue rows."""
+        try:
+            with self.connect_database() as connection:
+                asset_columns = {
+                    row["name"]
+                    for row in connection.execute(
+                        "PRAGMA table_info(assets)"
+                    ).fetchall()
+                }
+
+                required = {"asset_id", "status", "asset_condition"}
+                missing = required - asset_columns
+                if missing:
+                    raise RuntimeError(
+                        "The assets table is missing required columns: "
+                        + ", ".join(sorted(missing))
+                    )
+
+                def pick(columns, candidates):
+                    for candidate in candidates:
+                        if candidate in columns:
+                            return candidate
+                    return None
+
+                asset_code_col = pick(
+                    asset_columns, ["asset_code", "asset_tag", "code"]
+                )
+                asset_name_col = pick(
+                    asset_columns, ["asset_name", "name", "item_name"]
+                )
+                location_id_col = pick(
+                    asset_columns, ["location_id"]
+                )
+                purchase_cost_col = pick(
+                    asset_columns, ["purchase_cost", "purchase_value", "cost"]
+                )
+
+                status_expr = "LOWER(TRIM(COALESCE(status, '')))"
+                condition_expr = "LOWER(TRIM(COALESCE(asset_condition, '')))"
+                attention_statuses = (
+                    "'needs maintenance', 'under maintenance', 'out of service'"
+                )
+                attention_conditions = (
+                    "'poor', 'damaged', 'critical', 'needs repair'"
+                )
+                attention_predicate = f"""
+                    ({status_expr} IN ({attention_statuses})
+                     OR {condition_expr} IN ({attention_conditions}))
+                """
+
+                stats = connection.execute(f"""
+                    SELECT
+                        COUNT(*) AS total_assets,
+                        COALESCE(SUM(CASE
+                            WHEN {status_expr} = 'in service'
+                            THEN 1 ELSE 0 END), 0) AS in_service,
+                        COALESCE(SUM(CASE
+                            WHEN {attention_predicate}
+                            THEN 1 ELSE 0 END), 0) AS needs_attention,
+                        COALESCE(SUM(CASE
+                            WHEN {condition_expr} = 'good'
+                            THEN 1 ELSE 0 END), 0) AS good_condition,
+                        COALESCE(SUM(CASE
+                            WHEN {condition_expr} = 'fair'
+                            THEN 1 ELSE 0 END), 0) AS fair_condition,
+                        COALESCE(SUM(CASE
+                            WHEN {condition_expr} IN ({attention_conditions})
+                            THEN 1 ELSE 0 END), 0) AS attention_condition
+                    FROM assets
+                """).fetchone()
+
+                total_assets = int(stats["total_assets"] or 0)
+                in_service = int(stats["in_service"] or 0)
+                needs_attention = int(stats["needs_attention"] or 0)
+                good_condition = int(stats["good_condition"] or 0)
+                fair_condition = int(stats["fair_condition"] or 0)
+                attention_condition = int(stats["attention_condition"] or 0)
+                other_condition = max(
+                    0,
+                    total_assets - good_condition - fair_condition
+                    - attention_condition
+                )
+
+                # ---------------------------------------------
+                # Maintenance data (columns are detected instead
+                # of assuming every database has identical labels).
+                # ---------------------------------------------
+                maintenance_cost = 0.0
+                maintenance_record_count = 0
+                recent_records = []
+                queue_mode = "maintenance"
+                maintenance_table = connection.execute("""
+                    SELECT name FROM sqlite_master
+                    WHERE type = 'table' AND name = 'maintenance_records'
+                """).fetchone()
+
+                maintenance_columns = set()
+                if maintenance_table:
+                    maintenance_columns = {
+                        row["name"]
+                        for row in connection.execute(
+                            "PRAGMA table_info(maintenance_records)"
+                        ).fetchall()
+                    }
+
+                cost_col = pick(
+                    maintenance_columns,
+                    ["cost", "maintenance_cost", "repair_cost", "actual_cost", "total_cost", "amount", "expense", "maintenance_expense"]
+                )
+                date_col = pick(
+                    maintenance_columns,
+                    ["maintenance_date", "service_date", "date", "created_at"]
+                )
+                description_col = pick(
+                    maintenance_columns,
+                    ["description", "maintenance_type", "issue", "work_description", "notes"]
+                )
+                record_status_col = pick(
+                    maintenance_columns,
+                    ["status", "maintenance_status"]
+                )
+                maintenance_id_col = pick(
+                    maintenance_columns,
+                    ["maintenance_id", "record_id", "id"]
+                )
+
+                if maintenance_table:
+                    maintenance_record_count = int(connection.execute(
+                        "SELECT COUNT(*) FROM maintenance_records"
+                    ).fetchone()[0] or 0)
+
+                    if cost_col:
+                        maintenance_cost = float(connection.execute(
+                            f"SELECT COALESCE(SUM(COALESCE(\"{cost_col}\", 0)), 0) "
+                            "FROM maintenance_records"
+                        ).fetchone()[0] or 0)
+
+                    if "asset_id" in maintenance_columns:
+                        asset_code_sql = (
+                            f"COALESCE(a.\"{asset_code_col}\", '—')"
+                            if asset_code_col else "'—'"
+                        )
+                        asset_name_sql = (
+                            f"COALESCE(a.\"{asset_name_col}\", 'Unnamed asset')"
+                            if asset_name_col else "'Unnamed asset'"
+                        )
+                        date_sql = (
+                            f"COALESCE(m.\"{date_col}\", '')"
+                            if date_col else "''"
+                        )
+                        description_sql = (
+                            f"COALESCE(m.\"{description_col}\", '')"
+                            if description_col else "''"
+                        )
+                        status_sql = (
+                            f"COALESCE(m.\"{record_status_col}\", 'Unknown')"
+                            if record_status_col else "'Unknown'"
+                        )
+                        cost_sql = (
+                            f"COALESCE(m.\"{cost_col}\", 0)"
+                            if cost_col else "0"
+                        )
+                        order_sql = (
+                            f"m.\"{maintenance_id_col}\" DESC"
+                            if maintenance_id_col else "m.rowid DESC"
+                        )
+
+                        location_join = ""
+                        building_sql = "'Not assigned'"
+                        if location_id_col:
+                            location_table = connection.execute("""
+                                SELECT name FROM sqlite_master
+                                WHERE type = 'table' AND name = 'locations'
+                            """).fetchone()
+                            if location_table:
+                                location_columns = {
+                                    row["name"]
+                                    for row in connection.execute(
+                                        "PRAGMA table_info(locations)"
+                                    ).fetchall()
+                                }
+                                building_col = pick(
+                                    location_columns,
+                                    ["building", "building_name", "name"]
+                                )
+                                location_pk = pick(
+                                    location_columns,
+                                    ["location_id", "id"]
+                                )
+                                if building_col and location_pk:
+                                    location_join = (
+                                        f"LEFT JOIN locations l ON l.\"{location_pk}\" "
+                                        f"= a.\"{location_id_col}\""
+                                    )
+                                    building_sql = (
+                                        f"COALESCE(l.\"{building_col}\", 'Not assigned')"
+                                    )
+
+                        query = f"""
+                            SELECT
+                                m.asset_id AS asset_id,
+                                {date_sql} AS maintenance_date,
+                                {asset_code_sql} AS asset_code,
+                                {asset_name_sql} AS asset_name,
+                                {building_sql} AS building,
+                                {description_sql} AS description,
+                                {status_sql} AS status,
+                                {cost_sql} AS cost,
+                                'maintenance' AS record_type
+                            FROM maintenance_records m
+                            LEFT JOIN assets a ON a.asset_id = m.asset_id
+                            {location_join}
+                            ORDER BY {order_sql}
+                            LIMIT 5
+                        """
+                        recent_records = [
+                            dict(row)
+                            for row in connection.execute(query).fetchall()
+                        ]
+
+                # If there are no maintenance records yet, show assets
+                # whose status/condition needs attention instead of a blank
+                # queue. This does not create or modify maintenance records.
+                if not recent_records:
+                    queue_mode = "attention"
+                    asset_code_sql = (
+                        f"COALESCE(a.\"{asset_code_col}\", '—')"
+                        if asset_code_col else "'—'"
+                    )
+                    asset_name_sql = (
+                        f"COALESCE(a.\"{asset_name_col}\", 'Unnamed asset')"
+                        if asset_name_col else "'Unnamed asset'"
+                    )
+                    condition_sql = "COALESCE(a.asset_condition, 'Unknown')"
+                    status_sql = "COALESCE(a.status, 'Unknown')"
+                    location_join = ""
+                    building_sql = "'Not assigned'"
+
+                    if location_id_col:
+                        location_table = connection.execute("""
+                            SELECT name FROM sqlite_master
+                            WHERE type = 'table' AND name = 'locations'
+                        """).fetchone()
+                        if location_table:
+                            location_columns = {
+                                row["name"]
+                                for row in connection.execute(
+                                    "PRAGMA table_info(locations)"
+                                ).fetchall()
+                            }
+                            building_col = pick(
+                                location_columns,
+                                ["building", "building_name", "name"]
+                            )
+                            location_pk = pick(
+                                location_columns,
+                                ["location_id", "id"]
+                            )
+                            if building_col and location_pk:
+                                location_join = (
+                                    f"LEFT JOIN locations l ON l.\"{location_pk}\" "
+                                    f"= a.\"{location_id_col}\""
+                                )
+                                building_sql = (
+                                    f"COALESCE(l.\"{building_col}\", 'Not assigned')"
+                                )
+
+                    purchase_value_sql = (
+                        f"COALESCE(a.\"{purchase_cost_col}\", 0)"
+                        if purchase_cost_col else "0"
+                    )
+                    attention_query = f"""
+                        SELECT
+                            a.asset_id AS asset_id,
+                            '' AS maintenance_date,
+                            {asset_code_sql} AS asset_code,
+                            {asset_name_sql} AS asset_name,
+                            {building_sql} AS building,
+                            ('Status: ' || {status_sql} || ' · Condition: ' || {condition_sql}) AS description,
+                            {status_sql} AS status,
+                            {purchase_value_sql} AS cost,
+                            'attention' AS record_type
+                        FROM assets a
+                        {location_join}
+                        WHERE {attention_predicate.replace('status', 'a.status').replace('asset_condition', 'a.asset_condition')}
+                        ORDER BY a.asset_id DESC
+                        LIMIT 5
+                    """
+                    recent_records = [
+                        dict(row)
+                        for row in connection.execute(attention_query).fetchall()
+                    ]
+
+                operational_rate = (
+                    (in_service / total_assets) * 100
+                    if total_assets else 0.0
+                )
+
+                # Always return the complete attention list separately from
+                # maintenance history. The dashboard can scroll this list
+                # without limiting it to the five latest maintenance records.
+                attention_assets = self.getAttentionAssets()
+
+                return {
+                    "success": True,
+                    "totalAssets": total_assets,
+                    "inService": in_service,
+                    "needsAttention": needs_attention,
+                    "maintenanceCost": maintenance_cost,
+                    "operationalRate": operational_rate,
+                    "goodCondition": good_condition,
+                    "fairCondition": fair_condition,
+                    "attentionCondition": attention_condition,
+                    "otherCondition": other_condition,
+                    "maintenanceRecordCount": maintenance_record_count,
+                    "queueCount": len(recent_records),
+                    "queueMode": queue_mode,
+                    "recentRecords": recent_records,
+                    "attentionAssets": attention_assets,
+                    "error": ""
+                }
+
+        except Exception as error:
+            print("Dashboard data error:", error)
+            return {
+                "success": False,
+                "totalAssets": 0,
+                "inService": 0,
+                "needsAttention": 0,
+                "maintenanceCost": 0.0,
+                "operationalRate": 0.0,
+                "goodCondition": 0,
+                "fairCondition": 0,
+                "attentionCondition": 0,
+                "otherCondition": 0,
+                "maintenanceRecordCount": 0,
+                "queueCount": 0,
+                "queueMode": "maintenance",
+                "recentRecords": [],
+                "attentionAssets": [],
+                "error": str(error)
+            }
+
+    # --------------------------------------------------------
+    # 07A. GET ALL ASSETS THAT NEED ATTENTION
+    # --------------------------------------------------------
+
+    @Slot(result="QVariantList")
+    def getAttentionAssets(self):
+        """Return every asset flagged for repair, service or inspection."""
+        try:
+            with self.connect_database() as connection:
+                asset_columns = {
+                    row["name"]
+                    for row in connection.execute(
+                        "PRAGMA table_info(assets)"
+                    ).fetchall()
+                }
+
+                required = {
+                    "asset_id", "asset_code", "asset_name", "category",
+                    "asset_condition", "status"
+                }
+                missing = required - asset_columns
+                if missing:
+                    raise RuntimeError(
+                        "The assets table is missing required columns: "
+                        + ", ".join(sorted(missing))
+                    )
+
+                location_columns = set()
+                location_exists = connection.execute("""
+                    SELECT 1 FROM sqlite_master
+                    WHERE type = 'table' AND name = 'locations'
+                """).fetchone() is not None
+
+                if location_exists:
+                    location_columns = {
+                        row["name"]
+                        for row in connection.execute(
+                            "PRAGMA table_info(locations)"
+                        ).fetchall()
+                    }
+
+                def pick(columns, candidates):
+                    for candidate in candidates:
+                        if candidate in columns:
+                            return candidate
+                    return None
+
+                def asset_expr(column, fallback="''"):
+                    if column and column in asset_columns:
+                        return f'a."{column}"'
+                    return fallback
+
+                purchase_date_col = pick(
+                    asset_columns, ["purchase_date", "acquisition_date"]
+                )
+                purchase_cost_col = pick(
+                    asset_columns, ["purchase_cost", "purchase_value", "cost"]
+                )
+                repair_cost_col = pick(
+                    asset_columns, ["estimated_repair_cost", "repair_cost"]
+                )
+                location_id_col = pick(asset_columns, ["location_id"])
+                location_pk = pick(location_columns, ["location_id", "id"])
+                building_col = pick(
+                    location_columns, ["building", "building_name", "name"]
+                )
+                floor_col = pick(location_columns, ["floor", "floor_name"])
+                room_col = pick(location_columns, ["room", "room_name"])
+
+                location_join = ""
+                building_sql = "'Not assigned'"
+                floor_sql = "''"
+                room_sql = "''"
+
+                if (
+                    location_exists and location_id_col
+                    and location_pk and building_col
+                ):
+                    location_join = (
+                        f'LEFT JOIN locations l '
+                        f'ON l."{location_pk}" = a."{location_id_col}"'
+                    )
+                    building_sql = f"COALESCE(l.\"{building_col}\", 'Not assigned')"
+                    if floor_col:
+                        floor_sql = f"COALESCE(l.\"{floor_col}\", '')"
+                    if room_col:
+                        room_sql = f"COALESCE(l.\"{room_col}\", '')"
+
+                status_expr = "LOWER(TRIM(COALESCE(a.status, '')))"
+                condition_expr = "LOWER(TRIM(COALESCE(a.asset_condition, '')))"
+
+                # Keep these labels aligned with getDashboardData() so the
+                # KPI count and the clickable attention list describe the same assets.
+                attention_statuses = (
+                    "'needs maintenance', 'under maintenance', 'out of service'"
+                )
+                attention_conditions = (
+                    "'poor', 'damaged', 'critical', 'needs repair'"
+                )
+
+                query = f"""
+                    SELECT
+                        a.asset_id AS asset_id,
+                        {asset_expr('asset_code', "'—'")} AS asset_code,
+                        {asset_expr('asset_name', "'Unnamed asset'")} AS asset_name,
+                        {asset_expr('category', "'Uncategorized'")} AS category,
+                        {asset_expr(purchase_date_col)} AS purchase_date,
+                        COALESCE({asset_expr(purchase_cost_col, '0')}, 0) AS purchase_cost,
+                        COALESCE({asset_expr(repair_cost_col, '0')}, 0) AS estimated_repair_cost,
+                        COALESCE(a.asset_condition, 'Unknown') AS asset_condition,
+                        COALESCE(a.status, 'Unknown') AS status,
+                        {asset_expr(location_id_col, 'NULL')} AS location_id,
+                        {building_sql} AS building,
+                        {floor_sql} AS floor,
+                        {room_sql} AS room
+                    FROM assets a
+                    {location_join}
+                    WHERE
+                        {status_expr} IN ({attention_statuses})
+                        OR {condition_expr} IN ({attention_conditions})
+                    ORDER BY
+                        CASE
+                            WHEN {status_expr} = 'out of service' THEN 0
+                            WHEN {condition_expr} = 'critical' THEN 1
+                            WHEN {status_expr} = 'under maintenance' THEN 2
+                            ELSE 3
+                        END,
+                        a.asset_id DESC
+                """
+
+                return [
+                    dict(row)
+                    for row in connection.execute(query).fetchall()
+                ]
+
+        except Exception as error:
+            print("Attention asset loading error:", error)
+            return []
+
+    # --------------------------------------------------------
+    # 07B. GET MAINTENANCE HISTORY FOR ONE ASSET
+    # --------------------------------------------------------
+
+    @Slot(int, result="QVariantList")
+    def getAssetMaintenanceHistory(self, asset_id):
+        """Return recent maintenance records for the selected asset."""
+        try:
+            with self.connect_database() as connection:
+                table_exists = connection.execute("""
+                    SELECT 1 FROM sqlite_master
+                    WHERE type = 'table' AND name = 'maintenance_records'
+                """).fetchone() is not None
+
+                if not table_exists:
+                    return []
+
+                columns = {
+                    row["name"]
+                    for row in connection.execute(
+                        "PRAGMA table_info(maintenance_records)"
+                    ).fetchall()
+                }
+
+                if "asset_id" not in columns:
+                    return []
+
+                def pick(candidates):
+                    for candidate in candidates:
+                        if candidate in columns:
+                            return candidate
+                    return None
+
+                date_col = pick([
+                    "maintenance_date", "service_date", "date", "created_at"
+                ])
+                description_col = pick([
+                    "description", "maintenance_type", "issue",
+                    "work_description", "notes"
+                ])
+                status_col = pick(["status", "maintenance_status"])
+                cost_col = pick(["cost", "maintenance_cost", "repair_cost", "actual_cost", "total_cost", "amount", "expense", "maintenance_expense"])
+                id_col = pick(["maintenance_id", "record_id", "id"])
+
+                date_sql = f'm."{date_col}"' if date_col else "''"
+                description_sql = f'm."{description_col}"' if description_col else "''"
+                status_sql = f'm."{status_col}"' if status_col else "'Unknown'"
+                cost_sql = f'COALESCE(m."{cost_col}", 0)' if cost_col else "0"
+                order_sql = f'm."{id_col}" DESC' if id_col else "m.rowid DESC"
+
+                rows = connection.execute(f"""
+                    SELECT
+                        {date_sql} AS maintenance_date,
+                        {description_sql} AS description,
+                        {status_sql} AS status,
+                        {cost_sql} AS cost
+                    FROM maintenance_records m
+                    WHERE m.asset_id = ?
+                    ORDER BY {order_sql}
+                    LIMIT 12
+                """, (int(asset_id),)).fetchall()
+
+                return [dict(row) for row in rows]
+
+        except Exception as error:
+            print("Asset maintenance history error:", error)
+            return []
+
+    # --------------------------------------------------------
+    # 07C. MAINTENANCE RECORDS: READ AND REGISTER
+    # --------------------------------------------------------
+
+    @Slot(result="QVariantList")
+    def getMaintenanceRecords(self):
+        """Return maintenance records joined to their asset and location."""
+        try:
+            with self.connect_database() as connection:
+                table_exists = connection.execute("""
+                    SELECT 1 FROM sqlite_master
+                    WHERE type = 'table' AND name = 'maintenance_records'
+                """).fetchone() is not None
+
+                if not table_exists:
+                    return []
+
+                maintenance_columns = {
+                    row["name"] for row in connection.execute(
+                        "PRAGMA table_info(maintenance_records)"
+                    ).fetchall()
+                }
+                asset_columns = {
+                    row["name"] for row in connection.execute(
+                        "PRAGMA table_info(assets)"
+                    ).fetchall()
+                }
+
+                def pick(columns, candidates):
+                    for candidate in candidates:
+                        if candidate in columns:
+                            return candidate
+                    return None
+
+                def expr(alias, column, fallback):
+                    return f'{alias}."{column}"' if column else fallback
+
+                date_col = pick(maintenance_columns, [
+                    "maintenance_date", "service_date", "date", "created_at"
+                ])
+                description_col = pick(maintenance_columns, [
+                    "description", "work_description", "issue", "notes", "maintenance_type"
+                ])
+                status_col = pick(maintenance_columns, ["status", "maintenance_status"])
+                cost_col = pick(maintenance_columns, [
+                    "cost", "maintenance_cost", "repair_cost", "actual_cost",
+                    "total_cost", "amount", "expense", "maintenance_expense"
+                ])
+                id_col = pick(maintenance_columns, ["maintenance_id", "record_id", "id"])
+                asset_name_col = pick(asset_columns, ["asset_name", "name", "item_name"])
+                asset_code_col = pick(asset_columns, ["asset_code", "asset_tag", "code"])
+                asset_category_col = pick(asset_columns, ["category", "asset_category"])
+
+                location_join = ""
+                building_sql = "'Not assigned'"
+                if "location_id" in asset_columns:
+                    location_table = connection.execute("""
+                        SELECT 1 FROM sqlite_master
+                        WHERE type = 'table' AND name = 'locations'
+                    """).fetchone() is not None
+                    if location_table:
+                        location_columns = {
+                            row["name"] for row in connection.execute(
+                                "PRAGMA table_info(locations)"
+                            ).fetchall()
+                        }
+                        location_pk = pick(location_columns, ["location_id", "id"])
+                        building_col = pick(location_columns, ["building", "building_name", "name"])
+                        if location_pk and building_col:
+                            location_join = (
+                                f'LEFT JOIN locations l ON l."{location_pk}" = a.location_id'
+                            )
+                            building_sql = f'COALESCE(l."{building_col}", \'Not assigned\')'
+
+                date_sql = expr("m", date_col, "''")
+                description_sql = expr("m", description_col, "''")
+                status_sql = expr("m", status_col, "'Unknown'")
+                cost_sql = f'COALESCE({expr("m", cost_col, "0")}, 0)'
+                id_order = f'm."{id_col}" DESC' if id_col else "m.rowid DESC"
+                name_sql = expr("a", asset_name_col, "'Unnamed asset'")
+                code_sql = expr("a", asset_code_col, "'—'")
+                category_sql = expr("a", asset_category_col, "''")
+
+                if "asset_id" not in maintenance_columns:
+                    return []
+
+                rows = connection.execute(f"""
+                    SELECT
+                        m.asset_id AS asset_id,
+                        {date_sql} AS maintenance_date,
+                        {description_sql} AS description,
+                        {status_sql} AS status,
+                        {cost_sql} AS cost,
+                        {name_sql} AS asset_name,
+                        {code_sql} AS asset_code,
+                        {category_sql} AS category,
+                        {building_sql} AS building
+                    FROM maintenance_records m
+                    LEFT JOIN assets a ON a.asset_id = m.asset_id
+                    {location_join}
+                    ORDER BY {id_order}
+                """).fetchall()
+
+                return [dict(row) for row in rows]
+
+        except Exception as error:
+            print("Maintenance records loading error:", error)
+            return []
+
+    @Slot("QVariantMap", result="QVariantMap")
+    def saveMaintenanceRecord(self, data):
+        """Insert one maintenance expense using the existing table schema."""
+        try:
+            asset_id = int(data.get("asset_id") or 0)
+            maintenance_date = str(data.get("maintenance_date", "")).strip()
+            description = str(data.get("description", "")).strip()
+            status = str(data.get("status", "Completed")).strip()
+
+            try:
+                cost = float(str(data.get("cost", "0")).replace(",", "").strip() or 0)
+            except (TypeError, ValueError):
+                return {"success": False, "message": "Enter a valid maintenance cost."}
+
+            if asset_id <= 0:
+                return {"success": False, "message": "Select an asset first."}
+            if not description:
+                return {"success": False, "message": "Enter a description of the maintenance work."}
+            if cost < 0:
+                return {"success": False, "message": "Maintenance cost cannot be negative."}
+            try:
+                datetime.strptime(maintenance_date, "%Y-%m-%d")
+            except ValueError:
+                return {"success": False, "message": "Use YYYY-MM-DD for the maintenance date."}
+
+            now_text = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            allowed_statuses = {"Pending", "In Progress", "Completed"}
+            if status not in allowed_statuses:
+                return {"success": False, "message": "Choose a valid maintenance status."}
+
+            with self.connect_database() as connection:
+                asset_exists = connection.execute(
+                    "SELECT 1 FROM assets WHERE asset_id = ?", (asset_id,)
+                ).fetchone()
+                if not asset_exists:
+                    return {"success": False, "message": "The selected asset no longer exists."}
+
+                table_exists = connection.execute("""
+                    SELECT 1 FROM sqlite_master
+                    WHERE type = 'table' AND name = 'maintenance_records'
+                """).fetchone() is not None
+                if not table_exists:
+                    return {
+                        "success": False,
+                        "message": "The maintenance_records table does not exist in this database."
+                    }
+
+                columns = connection.execute(
+                    "PRAGMA table_info(maintenance_records)"
+                ).fetchall()
+                column_names = {row["name"] for row in columns}
+
+                cost_candidates = [
+                    "cost", "maintenance_cost", "repair_cost", "actual_cost",
+                    "total_cost", "amount", "expense", "maintenance_expense"
+                ]
+                date_candidates = ["maintenance_date", "service_date", "date", "created_at"]
+                description_candidates = [
+                    "description", "work_description", "issue", "notes", "maintenance_type"
+                ]
+                status_candidates = ["status", "maintenance_status"]
+
+                values = {}
+                for column in columns:
+                    name = column["name"]
+                    key = name.lower()
+
+                    if key == "asset_id":
+                        values[name] = asset_id
+                    elif key in date_candidates:
+                        values[name] = maintenance_date
+                    elif key in description_candidates:
+                        values[name] = description
+                    elif key in cost_candidates:
+                        values[name] = cost
+                    elif key in status_candidates:
+                        values[name] = status
+                    elif key in ("work_type", "type"):
+                        values[name] = "Repair / Service"
+                    elif key in ("technician", "technician_name", "assigned_to", "performed_by", "handled_by"):
+                        values[name] = "Not specified"
+                    elif key in ("created_at", "updated_at", "recorded_at"):
+                        values[name] = now_text
+                    elif key in ("created_by", "recorded_by"):
+                        values[name] = "Local user"
+
+                required_missing = []
+                for column in columns:
+                    name = column["name"]
+                    is_primary_key = int(column["pk"] or 0) > 0
+                    requires_value = (
+                        int(column["notnull"] or 0) == 1
+                        and column["dflt_value"] is None
+                        and not is_primary_key
+                        and name not in values
+                    )
+                    if requires_value:
+                        required_missing.append(name)
+
+                if required_missing:
+                    return {
+                        "success": False,
+                        "message": (
+                            "Your maintenance table requires additional fields: "
+                            + ", ".join(required_missing)
+                            + ". Send me the table structure so I can add them to the form."
+                        )
+                    }
+
+                if "asset_id" not in values:
+                    return {"success": False, "message": "The maintenance table has no asset_id column."}
+                if not any(name in values for name in date_candidates):
+                    return {"success": False, "message": "The maintenance table has no supported date column."}
+                if not any(name in values for name in description_candidates):
+                    return {"success": False, "message": "The maintenance table has no supported description column."}
+                if not any(name in values for name in cost_candidates):
+                    return {"success": False, "message": "The maintenance table has no supported cost column."}
+
+                quoted_columns = [f'"{name.replace(chr(34), chr(34) * 2)}"' for name in values]
+                placeholders = ", ".join("?" for _ in values)
+                sql = (
+                    "INSERT INTO maintenance_records ("
+                    + ", ".join(quoted_columns)
+                    + ") VALUES ("
+                    + placeholders
+                    + ")"
+                )
+                cursor = connection.execute(sql, list(values.values()))
+                new_id = int(cursor.lastrowid or 0)
+
+            self.maintenanceChanged.emit()
+
+            return {
+                "success": True,
+                "message": "Maintenance record saved successfully.",
+                "record_id": new_id
+            }
+
+        except sqlite3.IntegrityError as error:
+            return {
+                "success": False,
+                "message": "Database constraint error: " + str(error)
+            }
+        except Exception as error:
+            print("Maintenance record save error:", error)
+            return {"success": False, "message": str(error)}
+
+    # --------------------------------------------------------
+    # 08. SAVE / UPDATE ASSET
     # --------------------------------------------------------
 
     @Slot("QVariantMap", result="QVariantMap")
@@ -373,7 +1251,6 @@ class AssetBackend(QObject):
                 data.get("purchase_date", "")
             ).strip()
 
-            # Required fields
             if not asset_code or not asset_name or not category:
 
                 return {
@@ -384,7 +1261,6 @@ class AssetBackend(QObject):
                     )
                 }
 
-            # Date validation
             if purchase_date:
 
                 try:
@@ -404,7 +1280,6 @@ class AssetBackend(QObject):
                         )
                     }
 
-            # Money validation
             try:
 
                 purchase_cost = float(
@@ -435,7 +1310,6 @@ class AssetBackend(QObject):
                     )
                 }
 
-            # Location validation
             location_value = data.get("location_id")
 
             location_id = (
@@ -554,7 +1428,7 @@ class AssetBackend(QObject):
             }
 
     # --------------------------------------------------------
-    # 07. DELETE ASSET
+    # 09. DELETE ASSET
     # --------------------------------------------------------
 
     @Slot(int, result="QVariantMap")
@@ -608,7 +1482,7 @@ class AssetBackend(QObject):
 
 
 # ============================================================
-# 08. APPLICATION ENTRY POINT
+# 09. APPLICATION ENTRY POINT
 # ============================================================
 
 def main():
@@ -616,6 +1490,9 @@ def main():
     QQuickStyle.setStyle("Basic")
 
     app = QGuiApplication(sys.argv)
+
+    # Load the application-wide font.
+    load_application_font(app)
 
     view = QQuickView()
 
@@ -637,9 +1514,27 @@ def main():
         QQuickView.ResizeMode.SizeRootObjectToView
     )
 
+    # Keep a sensible minimum size so the dashboard layouts do not
+    # collapse into one another when the user restores the window.
     view.setMinimumSize(
-        QSize(950, 650)
+        QSize(950, 600)
     )
+
+    # Give Windows a sensible restore size. The app still starts maximized,
+    # but restoring it will return to a window that fits the current screen.
+    screen = app.primaryScreen()
+    if screen is not None:
+        available = screen.availableGeometry()
+        initial_width = min(1200, max(950, available.width() - 80))
+        initial_height = min(680, max(600, available.height() - 80))
+        initial_x = available.x() + (available.width() - initial_width) // 2
+        initial_y = available.y() + (available.height() - initial_height) // 2
+        view.setGeometry(
+            initial_x,
+            initial_y,
+            initial_width,
+            initial_height
+        )
 
     # Load main QML file
     qml_file = PROJECT_DIR / "main.qml"
@@ -656,7 +1551,9 @@ def main():
 
         return 1
 
-    view.show()
+    # Start maximized so the dashboard has the full usable desktop area
+    # immediately instead of opening at the QML design size (1200 x 760).
+    view.showMaximized()
 
     return app.exec()
 

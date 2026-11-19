@@ -1,78 +1,48 @@
+
 import QtQuick
 import QtQuick.Controls
 
 TextField {
     id: control
 
-    color: "#EDF4FF"
-    placeholderTextColor: "#8295B2"
+    color: "#F1F6FF"
+    placeholderTextColor: "#AABBD2"
 
     selectionColor: "#6683CFFF"
     selectedTextColor: "#FFFFFF"
 
-    font.pixelSize: 12
+    font.family: appFontFamily
+    font.pixelSize: 13
+    font.weight: Font.Normal
 
-    leftPadding: 12
-    rightPadding: 12
+    leftPadding: 13
+    rightPadding: 13
 
-    implicitHeight: 39
+    implicitHeight: 40
 
     background: Rectangle {
-        radius: 10
+        radius: 11
 
         color: control.activeFocus
-               ? "#27FFFFFF"
-               : "#14FFFFFF"
+               ? "#2AFFFFFF"
+               : "#18FFFFFF"
 
         border.width: 1
 
         border.color: control.activeFocus
                       ? "#9ACFFFFF"
-                      : "#38FFFFFF"
+                      : "#45FFFFFF"
 
         Behavior on color {
-            ColorAnimation { duration: 150 }
-        }
-
-        Behavior on border.color {
-            ColorAnimation { duration: 150 }
-        }
-
-        // Top inner reflection
-        Rectangle {
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-
-            anchors.margins: 1
-
-            height: parent.height * 0.42
-            radius: 9
-
-            gradient: Gradient {
-                GradientStop {
-                    position: 0.0
-                    color: "#17FFFFFF"
-                }
-
-                GradientStop {
-                    position: 1.0
-                    color: "#00FFFFFF"
-                }
+            ColorAnimation {
+                duration: 150
             }
         }
 
-        // Focus highlight
-        Rectangle {
-            anchors.fill: parent
-
-            radius: 10
-            color: "transparent"
-
-            border.width: 1
-            border.color: control.activeFocus
-                          ? "#35BDEBFF"
-                          : "transparent"
+        Behavior on border.color {
+            ColorAnimation {
+                duration: 150
+            }
         }
     }
 }
