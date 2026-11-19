@@ -8,3 +8,15 @@ __pycache__/
 .vscode/
 dist/
 build/
+
+# Local project archives
+BubtOps_Source.zip
+Inter-4.1.zip
+Inter-4.1/
+
+# Local backups
+backup files/
+backups/
+*.backup
+*.attention-backup
+*.phase2-backup
