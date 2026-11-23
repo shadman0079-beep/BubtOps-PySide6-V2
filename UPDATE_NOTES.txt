@@ -1,0 +1,7 @@
+BubtOps PySide6 merged update
+
+Applied the BUBT-OPS-main application code, Settings/About pages, updated QML components, and font asset to the existing BubtOps_PySide6 project.
+Preserved the existing project data/bubtops.db and existing backup/archive folders. The source database was NOT copied over your database.
+
+Before first launch, keep a separate backup of data/bubtops.db. Run: python main.py
+Python syntax compilation passed. A live PySide6/QML GUI test was not run in this environment.

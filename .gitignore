@@ -1,0 +1,25 @@
+﻿.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
+
+# Project backups and old versions
+backup files/
+backup_before_glass_redesign/
+backups/
+
+# Old backup copies
+*.backup
+*.att​ention-backup
+*.before-responsive
+*.phase2-backup
+
+# Old project archives
+*.zip
